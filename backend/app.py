@@ -1089,7 +1089,8 @@ def get_satellite_image_url(lat, lon, zoom=12):
     worldview_url = f"https://worldview.earthdata.nasa.gov/?v={lon-0.1},{lat-0.1},{lon+0.1},{lat+0.1}&l=VIIRS_SNPP_CorrectedReflectance_TrueColor"
 
     # Option 2: Mapbox Static Satellite Image (direct image)
-    static_map = f"https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/pin-s-fire+ff0000({lon},{lat})/{lon},{lat},{zoom},0/800x600?access_token=MAPBOX_TOKEN_REMOVED"
+    mapbox_token = os.getenv("MAPBOX_TOKEN", "")
+    static_map = f"https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/pin-s-fire+ff0000({lon},{lat})/{lon},{lat},{zoom},0/800x600?access_token={mapbox_token}"
 
     # Option 3: NASA GIBS - Global Imagery Browse Services (direct satellite images)
     # Convert lat/lon to tile coordinates for EPSG:3857

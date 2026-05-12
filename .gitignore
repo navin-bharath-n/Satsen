@@ -2,39 +2,126 @@
 # SatSen - Root .gitignore
 # ===========================
 
-# ---- Python (Backend) ----
-backend/venv/
-backend/__pycache__/
-backend/*.pyc
-backend/*.pyo
-backend/*.pyd
-backend/*.db
-backend/*.sqlite3
-backend/uploads/
-backend/training/
-backend/*.zip
 
-# ---- Environment / Secrets ----
+# ─────────────────────────────
+# Environment / Secrets
+# ─────────────────────────────
 .env
 **/.env
 **/.env.*
-!**/.env.example
+!**/.env.example        # keep example files
 
-# ---- Node / Frontend ----
+
+# ─────────────────────────────
+# Python (Backend)
+# ─────────────────────────────
+
+# Virtual environment
+backend/venv/
+backend/.venv/
+
+# Compiled bytecode
+backend/__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Databases / SQLite
+backend/*.db
+backend/*.sqlite3
+backend/*.sqlite
+
+# Uploads (user-submitted files)
+backend/uploads/
+
+# Migration helpers (one-off scripts, not source)
+backend/migrate*.py
+
+# Compressed data
+backend/*.zip
+backend/*.tar.gz
+backend/*.tar.bz2
+
+# Geo / shape files (large binaries)
+backend/*.shp
+backend/*.shx
+backend/*.dbf
+backend/*.prj
+backend/*.cpg
+
+# Routes / debug dumps
+backend/routes.txt
+backend/cnn_test.html
+
+# Recovery / utility scripts
+recover_vscode.py
+
+
+# ─────────────────────────────
+# Machine-Learning Artifacts
+# ─────────────────────────────
+
+# Trained model weights (large binaries — use Git LFS or external storage)
+**/*.pth
+**/*.pt
+**/*.h5
+**/*.pkl
+**/*.joblib
+**/*.onnx
+**/*.safetensors
+
+# Training datasets / generated CSVs
+backend/training/fire_timeseries.csv
+backend/training/cnn_images/
+
+# Full training directory (weights + data)
+backend/training/
+
+
+# ─────────────────────────────
+# Node / Frontend (Vite + React)
+# ─────────────────────────────
 frontend/node_modules/
 frontend/dist/
 frontend/build/
 frontend/.vite/
-frontend/build_error.log
+frontend/.cache/
 
-# ---- IDE / OS ----
+# Build artefacts / logs
+frontend/build_error.log
+frontend/zero.txt
+
+# Generated lock files (optional — keep package-lock.json if you pin deps)
+# frontend/package-lock.json
+
+
+# ─────────────────────────────
+# IDE / Editor
+# ─────────────────────────────
 .vscode/
 .idea/
-*.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swp
+
+
+# ─────────────────────────────
+# OS Artifacts
+# ─────────────────────────────
+.DS_Store
 Thumbs.db
 desktop.ini
+ehthumbs.db
 
-# ---- Misc ----
+
+# ─────────────────────────────
+# Logs & Temp Files
+# ─────────────────────────────
 *.log
 *.bak
-recover_vscode.py
+*.tmp
+*.temp

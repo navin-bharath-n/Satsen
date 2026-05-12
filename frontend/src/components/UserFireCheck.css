@@ -1,0 +1,48 @@
+.fire-check-container {
+  max-width: 420px;
+  margin: 30px auto;
+  padding: 20px;
+  background: #0f172a;
+  color: white;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.fire-check-container input,
+.fire-check-container button {
+  width: 100%;
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
+}
+
+.fire-check-container button {
+  background: #2563eb;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.alert-box {
+  margin-top: 15px;
+  padding: 15px;
+  border-radius: 8px;
+  animation: pulse 1.5s infinite;
+}
+
+.alert-box.fire {
+  background: #b91c1c;
+  box-shadow: 0 0 15px red;
+}
+
+.alert-box.safe {
+  background: #15803d;
+  box-shadow: 0 0 15px #22c55e;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}

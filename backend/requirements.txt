@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+python-dotenv
+torch
+rasterio
+sentinelsat
+shapely
+requests
+numpy
+websockets
+google-generativeai

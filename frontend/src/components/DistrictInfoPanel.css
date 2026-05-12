@@ -1,0 +1,185 @@
+/* ===============================
+   MAIN CONTAINER
+================================= */
+
+.district-map-container {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  background: transparent;
+  color: #ffffff;
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===============================
+   MAP STYLING
+================================= */
+
+.district-map-container .leaflet-container {
+  width: 100%;
+  height: 100% !important;
+  flex: 1;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+}
+
+/* ===============================
+   WEATHER PANEL
+================================= */
+
+.district-weather {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 320px;
+  z-index: 1000;
+  padding: 20px;
+
+  /* Glassmorphism Effect */
+  background: rgba(4, 8, 20, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px 0 rgba(0, 255, 255, 0.15);
+
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  animation: slideInRight 0.3s ease-out forwards;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.district-weather:hover {
+  box-shadow: 0 8px 32px 0 rgba(0, 255, 255, 0.3);
+  transform: translateY(-2px);
+  border-color: rgba(0, 255, 255, 0.5);
+}
+
+/* ===============================
+   HEADINGS
+================================= */
+
+.district-weather h2 {
+  margin-bottom: 15px;
+  color: #00ffff;
+  font-size: 20px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  border-bottom: 1px solid rgba(0, 255, 255, 0.3);
+  padding-bottom: 10px;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+.district-weather h3 {
+  margin-top: 15px;
+  margin-bottom: 8px;
+  color: #ffa500;
+  font-size: 18px;
+}
+
+/* ===============================
+   WEATHER DETAILS
+================================= */
+
+.district-weather p {
+  margin: 10px 0;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  justify-content: space-between;
+}
+
+.district-weather b {
+  font-weight: 600;
+  color: #00ffff;
+}
+
+/* ===============================
+   FIRE CARDS
+================================= */
+
+.fire-card {
+  margin-top: 12px;
+  padding: 12px;
+  background: #1c1c1c;
+  border-left: 5px solid red;
+  border-radius: 8px;
+  transition: 0.3s ease;
+}
+
+.fire-card:hover {
+  transform: translateX(5px);
+  background: #262626;
+}
+
+.fire-card p {
+  margin: 4px 0;
+  font-size: 14px;
+}
+
+/* ===============================
+   RISK INDICATOR
+================================= */
+
+.risk {
+  margin-top: 10px;
+  font-size: 16px;
+}
+
+/* ===============================
+   POPUP STYLE (Leaflet Popup)
+================================= */
+
+.leaflet-popup-content-wrapper {
+  background: rgba(4, 8, 20, 0.9);
+  color: #e0f2fe;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 255, 255, 0.4);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+}
+
+.leaflet-popup-tip {
+  background: rgba(4, 8, 20, 0.9);
+  border: 1px solid rgba(0, 255, 255, 0.4);
+  /* Optional: to hide some border glitches, but might look complex. We will just use background color */
+}
+
+/* ===============================
+   RESPONSIVE DESIGN
+================================= */
+
+@media (max-width: 768px) {
+  .district-map-container {
+    padding: 10px;
+  }
+
+  .district-weather {
+    padding: 15px;
+  }
+
+  .district-weather h2 {
+    font-size: 18px;
+  }
+
+  .district-weather h3 {
+    font-size: 16px;
+  }
+
+  .district-weather p {
+    font-size: 14px;
+  }
+}

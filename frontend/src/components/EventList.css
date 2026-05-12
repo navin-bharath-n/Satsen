@@ -1,0 +1,204 @@
+.event-list {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 85vh;
+  /* Added to enforce vertical constraints and fix scrolling */
+  overflow: hidden;
+  padding: 1.5rem;
+}
+
+.event-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.event-list-header h2 {
+  color: #397bd1;
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.refresh-btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: #5568d3;
+}
+
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.event-count {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+.events-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 0;
+  padding-right: 0.5rem;
+}
+
+/* Custom scrollbar for events container */
+.events-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.events-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.events-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.events-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Satellite image preview animations */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.no-events {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #999;
+}
+
+.no-events .subtext {
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  color: #bbb;
+}
+
+.event-card {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 1.5rem;
+  border-left: 5px solid #667eea;
+  border: 1px solid #e9ecef;
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.event-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  border-color: #667eea;
+}
+
+.event-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.severity-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.event-time {
+  font-size: 0.8rem;
+  color: #999;
+}
+
+.event-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  font-size: 0.9rem;
+  padding: 0.25rem 0;
+}
+
+.detail-row .label {
+  color: #495057;
+  font-weight: 600;
+  margin-right: 0.75rem;
+  min-width: 100px;
+}
+
+.detail-row .value {
+  color: #212529;
+  text-align: right;
+  flex: 1;
+  font-weight: 500;
+}
+
+.detail-row .value.small {
+  font-size: 0.8rem;
+  color: #6c757d;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+/* Evacuation row specific styling */
+.evacuation-row {
+  background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%) !important;
+  border: 2px solid #4caf50 !important;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
+}
+
+.evacuation-row .label,
+.evacuation-row .value {
+  color: #2e7d32 !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 2px rgba(46, 125, 50, 0.1);
+}
+
+/* Safety zones section */
+.safety-zones-section {
+  background: linear-gradient(135deg, #fff3cd 0%, #fef5e7 100%);
+  border: 2px solid #f39c12;
+  border-left: 4px solid #e67e22;
+}
+
+/* Coordinates row */
+.coordinates-row {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 1px solid #dee2e6;
+}

@@ -1,0 +1,40 @@
+# ===========================
+# SatSen - Root .gitignore
+# ===========================
+
+# ---- Python (Backend) ----
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/*.pyo
+backend/*.pyd
+backend/*.db
+backend/*.sqlite3
+backend/uploads/
+backend/training/
+backend/*.zip
+
+# ---- Environment / Secrets ----
+.env
+**/.env
+**/.env.*
+!**/.env.example
+
+# ---- Node / Frontend ----
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+frontend/build_error.log
+
+# ---- IDE / OS ----
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Misc ----
+*.log
+*.bak
+recover_vscode.py

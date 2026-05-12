@@ -1,0 +1,66 @@
+===========================================
+QUICK NODE.JS INSTALLATION GUIDE
+===========================================
+
+STEP 1: Download Node.js
+-------------------------
+I've opened the Node.js website in your browser.
+- Click the GREEN "LTS" button (Long Term Support version)
+- This will download the Windows installer (.msi file)
+
+OR manually go to: https://nodejs.org/
+
+STEP 2: Install Node.js
+------------------------
+1. Find the downloaded file (usually in Downloads folder)
+2. Double-click the .msi file
+3. Click "Next" through the installation wizard
+4. Accept the license agreement
+5. Keep all default settings
+6. Click "Install"
+7. Wait for installation to complete
+8. Click "Finish"
+
+STEP 3: Restart Terminal
+--------------------------
+IMPORTANT: Close ALL PowerShell/Command Prompt windows
+Then open a NEW terminal window
+
+STEP 4: Verify Installation
+----------------------------
+In the new terminal, run:
+  node --version
+  npm --version
+
+You should see version numbers (like v20.11.0 and 10.2.4)
+
+STEP 5: Install Frontend Dependencies
+--------------------------------------
+Navigate to frontend folder:
+  cd "C:\Users\varad\Downloads\Telegram Desktop\satellite monitering\flood monitoring\frontend"
+
+Install packages:
+  npm install
+
+STEP 6: Run the Frontend
+-------------------------
+  npm run dev
+
+The frontend will start at: http://localhost:3000
+
+===========================================
+TROUBLESHOOTING
+===========================================
+
+If "node" or "npm" is still not recognized after installation:
+1. Restart your computer
+2. Or manually add Node.js to PATH (usually done automatically)
+
+If you get errors during npm install:
+- Make sure you're in the frontend directory
+- Check your internet connection
+- Try: npm install --legacy-peer-deps
+
+===========================================
+
+

@@ -1,0 +1,58 @@
+===========================================
+FRONTEND SETUP INSTRUCTIONS
+===========================================
+
+STEP 1: Install Node.js
+------------------------
+1. Download Node.js from: https://nodejs.org/
+2. Choose the LTS (Long Term Support) version
+3. Run the installer and follow the setup wizard
+4. Restart your terminal/command prompt after installation
+
+STEP 2: Verify Installation
+---------------------------
+Open a NEW terminal and run:
+  node --version
+  npm --version
+
+Both commands should show version numbers.
+
+STEP 3: Install Frontend Dependencies
+------------------------------------
+Open a NEW terminal and run:
+  cd "C:\Users\varad\Downloads\Telegram Desktop\satellite monitering\flood monitoring\frontend"
+  npm install
+
+This will install all required packages (React, Vite, Leaflet, etc.)
+
+STEP 4: Run the Frontend
+-------------------------
+In the same terminal, run:
+  npm run dev
+
+The frontend will start at: http://localhost:3000
+
+STEP 5: Make Sure Backend is Running
+-----------------------------------
+In a SEPARATE terminal, make sure the backend is running:
+  cd "C:\Users\varad\Downloads\Telegram Desktop\satellite monitering\flood monitoring\backend"
+  python -m uvicorn app:app --reload --host 0.0.0.0 --port 8000
+
+===========================================
+QUICK START (After Node.js is installed)
+===========================================
+
+Terminal 1 (Backend):
+  cd "C:\Users\varad\Downloads\Telegram Desktop\satellite monitering\flood monitoring\backend"
+  python -m uvicorn app:app --reload --host 0.0.0.0 --port 8000
+
+Terminal 2 (Frontend):
+  cd "C:\Users\varad\Downloads\Telegram Desktop\satellite monitering\flood monitoring\frontend"
+  npm install
+  npm run dev
+
+Then open: http://localhost:3000 in your browser
+
+===========================================
+
+

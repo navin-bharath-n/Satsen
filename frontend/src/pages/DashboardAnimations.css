@@ -1,0 +1,67 @@
+/* 🌌 SatSen DashboardAnimations.css - HUD Keyframe Cycles */
+
+/* Radar sweep rotation */
+@keyframes radarSweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Vertical scanline movement */
+@keyframes scanlineMove {
+  0% {
+    top: 0%;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
+/* Warning Alarm background flashes */
+@keyframes alertFlash {
+  0% {
+    background: rgba(255, 59, 48, 0.05);
+    border-color: rgba(255, 59, 48, 0.4);
+    box-shadow: 0 0 20px rgba(255, 59, 48, 0.2);
+  }
+  100% {
+    background: rgba(255, 59, 48, 0.18);
+    border-color: rgba(255, 59, 48, 0.85);
+    box-shadow: 0 0 40px rgba(255, 59, 48, 0.5);
+  }
+}
+
+/* Radar node pulsing green dot */
+@keyframes radarBlink {
+  0% {
+    opacity: 0.35;
+    box-shadow: 0 0 4px var(--neon-green);
+  }
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 12px var(--neon-green);
+  }
+}
+
+/* Animated audio bars */
+@keyframes voicePulse {
+  0% {
+    transform: scaleY(0.4);
+    filter: brightness(0.8);
+  }
+  100% {
+    transform: scaleY(1.4);
+    filter: brightness(1.2);
+  }
+}
+
+/* Glitch overlay effects */
+@keyframes glitchFlicker {
+  0%, 100% { opacity: 0.95; }
+  33% { opacity: 0.8; }
+  66% { opacity: 0.9; }
+  75% { opacity: 0.6; }
+}

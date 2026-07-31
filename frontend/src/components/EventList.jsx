@@ -198,7 +198,7 @@ const getSeverityBadge = (severity) => {
   )
 }
 
-function EventList({ events, onRefresh }) {
+function EventList({ events, onRefresh, onSelect }) {
   const [refreshing, setRefreshing] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [showSatelliteModal, setShowSatelliteModal] = useState(false)
@@ -243,11 +243,17 @@ function EventList({ events, onRefresh }) {
             <p className="subtext">The system is monitoring in real-time...</p>
           </div>
         ) : (
-          events.map((event) => (
+          [...events].sort((a, b) => {
+            const sevOrder = { 'HIGH': 3, 'MEDIUM': 2, 'LOW': 1 };
+            const sevA = sevOrder[a.severity?.toUpperCase()] || 0;
+            const sevB = sevOrder[b.severity?.toUpperCase()] || 0;
+            return sevB - sevA;
+          }).map((event) => (
             <div key={event.id} className="event-card" style={{
               padding: '1.25rem',
-              marginBottom: '0.5rem'
-            }}>
+              marginBottom: '0.5rem',
+              cursor: onSelect ? 'pointer' : 'default'
+            }} onClick={() => onSelect && onSelect(event)}>
               <div className="event-header" style={{
                 marginBottom: '1rem',
                 paddingBottom: '0.75rem',

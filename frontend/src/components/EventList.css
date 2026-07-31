@@ -1,53 +1,28 @@
+/* 🌌 SatSen EventList.css - Tactical Telemetry Reports */
+
 .event-list {
   display: flex;
   flex-direction: column;
   height: 100%;
-  max-height: 85vh;
-  /* Added to enforce vertical constraints and fix scrolling */
+  max-height: none;
   overflow: hidden;
-  padding: 1.5rem;
+  padding: 0;
+  pointer-events: auto !important;
 }
 
+/* Hide duplicate header since dashboard card already contains one */
 .event-list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #e0e0e0;
-}
-
-.event-list-header h2 {
-  color: #397bd1;
-  font-size: 1.5rem;
-  margin: 0;
-}
-
-.refresh-btn {
-  background: #667eea;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background 0.2s;
-}
-
-.refresh-btn:hover:not(:disabled) {
-  background: #5568d3;
-}
-
-.refresh-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  display: none;
 }
 
 .event-count {
-  color: #666;
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
-  font-weight: 500;
+  color: var(--primary-cyan);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  margin-bottom: 16px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
 }
 
 .events-container {
@@ -56,149 +31,206 @@
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 14px;
   min-height: 0;
-  padding-right: 0.5rem;
+  padding-right: 6px;
+  pointer-events: auto !important;
 }
 
-/* Custom scrollbar for events container */
+/* Custom glowing scrollbar for events */
 .events-container::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .events-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 2px;
 }
 
 .events-container::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
+  background: rgba(0, 229, 255, 0.25);
+  border-radius: 2px;
+  border: 1px solid rgba(0, 229, 255, 0.1);
 }
 
 .events-container::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-/* Satellite image preview animations */
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
+  background: rgba(0, 229, 255, 0.6);
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
 }
 
 .no-events {
   text-align: center;
   padding: 3rem 1rem;
-  color: #999;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
 }
 
-.no-events .subtext {
-  font-size: 0.85rem;
-  margin-top: 0.5rem;
-  color: #bbb;
-}
-
+/* Glowing transparent cards (Lockheed Tactical HUD Style) */
 .event-card {
-  background: #ffffff;
-  border-radius: 10px;
-  padding: 1.5rem;
-  border-left: 5px solid #667eea;
-  border: 1px solid #e9ecef;
-  transition: transform 0.2s, box-shadow 0.2s;
-  margin-bottom: 0.75rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  background: rgba(4, 9, 20, 0.8) !important;
+  border-radius: 4px;
+  padding: 18px;
+  border: 1px solid rgba(0, 229, 255, 0.1) !important;
+  border-left: 4px solid var(--secondary-blue) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-bottom: 2px;
+  position: relative;
+}
+
+/* Glowing Corner Borders on cards */
+.event-card::before {
+  content: "";
+  position: absolute;
+  top: -1px; left: -1px;
+  width: 6px; height: 6px;
+  border-top: 2px solid var(--primary-cyan);
+  border-left: 2px solid var(--primary-cyan);
+}
+
+.event-card::after {
+  content: "";
+  position: absolute;
+  bottom: -1px; right: -1px;
+  width: 6px; height: 6px;
+  border-bottom: 2px solid var(--primary-cyan);
+  border-right: 2px solid var(--primary-cyan);
+}
+
+/* Severity borders */
+.event-card[data-severity="high"],
+.event-card:has(.severity-badge.high) {
+  border-left-color: var(--neon-red) !important;
+  border-color: rgba(255, 59, 48, 0.15) !important;
+}
+
+.event-card[data-severity="medium"],
+.event-card:has(.severity-badge.medium) {
+  border-left-color: var(--neon-amber) !important;
+  border-color: rgba(255, 184, 0, 0.15) !important;
+}
+
+.event-card[data-severity="low"],
+.event-card:has(.severity-badge.low) {
+  border-left-color: var(--neon-green) !important;
+  border-color: rgba(0, 255, 149, 0.15) !important;
 }
 
 .event-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-  border-color: #667eea;
+  transform: translateY(-2px);
+  border-color: rgba(0, 229, 255, 0.35) !important;
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.15);
 }
 
 .event-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid #e9ecef;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.08);
 }
 
+/* Severity Badges */
 .severity-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 2px;
+  font-family: var(--font-title);
+  font-size: 0.65rem;
+  font-weight: 900;
   display: inline-block;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.severity-badge.high {
+  background: rgba(255, 59, 48, 0.12);
+  color: var(--neon-red);
+  border: 1px solid rgba(255, 59, 48, 0.35);
+  text-shadow: 0 0 4px var(--neon-red);
+}
+
+.severity-badge.medium {
+  background: rgba(255, 184, 0, 0.12);
+  color: var(--neon-amber);
+  border: 1px solid rgba(255, 184, 0, 0.35);
+}
+
+.severity-badge.low {
+  background: rgba(0, 255, 149, 0.12);
+  color: var(--neon-green);
+  border: 1px solid rgba(0, 255, 149, 0.35);
 }
 
 .event-time {
-  font-size: 0.8rem;
-  color: #999;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
 }
 
 .event-details {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 10px;
 }
 
 .detail-row {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  font-size: 0.9rem;
-  padding: 0.25rem 0;
+  font-size: 0.82rem;
+  padding: 2px 0;
 }
 
 .detail-row .label {
-  color: #495057;
-  font-weight: 600;
-  margin-right: 0.75rem;
-  min-width: 100px;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-right: 8px;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
 }
 
 .detail-row .value {
-  color: #212529;
+  color: var(--text-primary);
   text-align: right;
   flex: 1;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .detail-row .value.small {
-  font-size: 0.8rem;
-  color: #6c757d;
-  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.75rem;
+  color: var(--primary-cyan);
+  font-family: var(--font-mono);
+  letter-spacing: 0.5px;
 }
 
-/* Evacuation row specific styling */
+/* Evacuation Specific row styling */
 .evacuation-row {
-  background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%) !important;
-  border: 2px solid #4caf50 !important;
-  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
+  background: rgba(0, 255, 149, 0.06) !important;
+  border: 1px solid rgba(0, 255, 149, 0.2) !important;
+  border-radius: 2px;
+  padding: 10px !important;
 }
 
 .evacuation-row .label,
 .evacuation-row .value {
-  color: #2e7d32 !important;
+  color: var(--neon-green) !important;
   font-weight: 700 !important;
-  text-shadow: 0 1px 2px rgba(46, 125, 50, 0.1);
+  font-family: var(--font-title);
+  letter-spacing: 0.5px;
 }
 
-/* Safety zones section */
+/* Safety Zones list inside card */
 .safety-zones-section {
-  background: linear-gradient(135deg, #fff3cd 0%, #fef5e7 100%);
-  border: 2px solid #f39c12;
-  border-left: 4px solid #e67e22;
+  background: rgba(255, 184, 0, 0.04);
+  border: 1px solid rgba(255, 184, 0, 0.2);
+  border-left: 3px solid var(--neon-amber);
+  border-radius: 2px;
+  padding: 10px !important;
 }
 
-/* Coordinates row */
 .coordinates-row {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border: 1px solid #dee2e6;
+  background: rgba(0, 229, 255, 0.04);
+  border: 1px solid rgba(0, 229, 255, 0.08);
 }

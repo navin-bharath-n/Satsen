@@ -1,137 +1,166 @@
+/* 🪐 SatSen Landing Page - Futuristic Visual Styling */
+
 .home-container {
   height: 100vh;
   width: 100%;
   overflow: hidden;
   position: relative;
-  font-family: 'Inter', Arial, sans-serif;
-  background-color: #040814;
-  background-image:
-    linear-gradient(to bottom, rgba(4, 8, 20, 0.9), rgba(2, 4, 10, 1)),
-    radial-gradient(circle at 50% 50%, rgba(0, 255, 255, 0.1), transparent 60%);
+  background-color: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* 🌌 Space Animated Background */
+/* Sci-fi space grid */
 .fire-bg {
   position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   background-image:
-    linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 40px 40px, 40px 40px;
-  animation: gridMove 20s linear infinite;
+    radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.12), transparent 70%),
+    linear-gradient(rgba(6, 182, 212, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(6, 182, 212, 0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 40px 40px, 40px 40px;
+  animation: gridShift 30s linear infinite;
   z-index: 0;
 }
 
-@keyframes gridMove {
-  0% {
-    transform: translateY(0);
-  }
-
-  100% {
-    transform: translateY(40px);
-  }
+@keyframes gridShift {
+  0% { background-position: 0 0; }
+  100% { background-position: 40px 40px; }
 }
 
-/* 🌍 Globe Container */
+/* 🌍 3D Globe Positioning */
 .globe {
   position: absolute;
-  right: 10%;
-  top: 15%;
-  width: 400px;
-  height: 400px;
+  right: 8%;
+  width: 480px;
+  height: 480px;
   z-index: 1;
+  filter: drop-shadow(0 0 30px rgba(6, 182, 212, 0.2));
+  pointer-events: auto;
 }
 
-/* 💎 Glass Tech Card */
+/* 💎 Premium Glass control deck */
 .glass-card {
   position: relative;
   z-index: 3;
-  width: 80%;
-  max-width: 650px;
-  margin: auto;
-  top: 25%;
-  padding: 50px 40px;
-  text-align: center;
-  color: #e0f2fe;
-
-  background: rgba(4, 8, 20, 0.6);
-  border-radius: 16px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 255, 255, 0.3);
-  box-shadow: 0 0 40px rgba(0, 255, 255, 0.1), inset 0 0 20px rgba(0, 255, 255, 0.05);
+  width: 90%;
+  max-width: 600px;
+  padding: 48px 40px;
+  background: rgba(11, 15, 25, 0.6);
+  border-radius: 24px;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-glow);
+  box-shadow: 0 20px 50px rgba(3, 7, 18, 0.6), inset 0 0 20px rgba(6, 182, 212, 0.08);
+  margin-right: 35%; /* Push left to balance with the globe on the right */
+  animation: cardFadeIn 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.glass-card h1 {
-  margin-bottom: 30px;
-  font-size: 2.2rem;
-  color: #00ffff;
-  text-transform: uppercase;
-  letter-spacing: 3px;
-  text-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
-}
-
-/* Login Button */
-.top-bar {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.login-btn {
-  background: transparent;
-  border: 1px solid white;
-  color: white;
-  padding: 6px 18px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-/* Sci-Fi Button */
-.fire-btn {
-  background: rgba(0, 255, 255, 0.1);
-  border: 1px solid #00ffff;
-  padding: 16px 40px;
-  color: #00ffff;
-  font-size: 18px;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  font-weight: 600;
-  border-radius: 8px;
-  cursor: pointer;
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.3), inset 0 0 10px rgba(0, 255, 255, 0.2);
-  transition: all 0.3s ease;
-}
-
-.fire-btn:hover {
-  background: rgba(0, 255, 255, 0.25);
-  box-shadow: 0 0 25px rgba(0, 255, 255, 0.6), inset 0 0 15px rgba(0, 255, 255, 0.4);
-  text-shadow: 0 0 5px #fff;
-}
-
-.fire-btn-secondary {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: #e0f2fe;
-  box-shadow: none;
-}
-
-.fire-btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: #fff;
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
-}
-
-/* 📱 Responsive */
-@media (max-width: 768px) {
-  .globe {
-    width: 250px;
-    height: 250px;
-    right: 5%;
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
   }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
 
+.system-title {
+  font-family: var(--font-display);
+  font-size: 2.3rem;
+  font-weight: 800;
+  line-height: 1.25;
+  background: linear-gradient(135deg, #ffffff 30%, #a5f3fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 12px;
+  text-shadow: 0 0 30px rgba(6, 182, 212, 0.1);
+}
+
+.system-subtitle {
+  font-size: 1rem;
+  color: #94a3b8;
+  line-height: 1.6;
+  margin-bottom: 36px;
+}
+
+/* Sci-fi Actions Pod */
+.actions-pod {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cyber-btn {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 16px 28px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cyber-btn.primary {
+  background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+}
+
+.cyber-btn.primary:hover {
+  box-shadow: 0 0 30px rgba(6, 182, 212, 0.6);
+  transform: translateY(-2px);
+}
+
+.cyber-btn.secondary {
+  background: rgba(255, 77, 77, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.cyber-btn.secondary:hover {
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(239, 68, 68, 0.8);
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.25);
+  transform: translateY(-2px);
+}
+
+/* Responsive Overrides */
+@media (max-width: 1024px) {
+  .home-container {
+    flex-direction: column;
+    justify-content: flex-start;
+    padding-top: 60px;
+    overflow-y: auto;
+  }
+  
   .glass-card {
+    margin-right: 0;
     width: 90%;
-    padding: 20px;
+    max-width: 500px;
+    padding: 36px 24px;
+    order: 2;
+  }
+  
+  .globe {
+    position: relative;
+    right: auto;
+    width: 280px;
+    height: 280px;
+    order: 1;
+    margin-bottom: 24px;
   }
 }

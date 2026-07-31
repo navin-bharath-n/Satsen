@@ -5,11 +5,32 @@ import {
   TileLayer,
   Circle,
   Polyline,
+  Polygon,
+  Marker,
+  Popup,
   useMap
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.heat";
+
+const userIcon = new L.Icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+const safeZoneIcon = new L.Icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
 
 const API = "http://127.0.0.1:8000";
 const WS = "ws://localhost:8000/ws/alerts";
@@ -256,14 +277,36 @@ export default function EmergencyControl() {
         ))}
 
         {alert && (
+          <Marker position={[alert.lat, alert.lon]} icon={userIcon}>
+            <Popup>
+              <b>📍 Evacuating User Location</b><br />
+              Coordinates: {alert.lat.toFixed(4)}, {alert.lon.toFixed(4)}
+            </Popup>
+          </Marker>
+        )}
+
+        {alert && alert.route && (
           <Polyline
-            positions={[
-              [alert.lat, alert.lon],
-              [alert.lat + 0.08, alert.lon + 0.08]
-            ]}
-            pathOptions={{ color: "lime", weight: 5 }}
+            positions={alert.route.coordinates.map(coord => [coord[1], coord[0]])}
+            pathOptions={{ color: "lime", weight: 6, opacity: 0.85 }}
           />
         )}
+
+        {alert && alert.fire_polygon && (
+          <Polygon
+            positions={alert.fire_polygon.coordinates[0].map(coord => [coord[1], coord[0]])}
+            pathOptions={{ color: "red", fillColor: "red", fillOpacity: 0.35, weight: 3 }}
+          />
+        )}
+
+        {alert && alert.safety_zones && alert.safety_zones.map((zone, idx) => (
+          <Marker key={idx} position={[zone.lat, zone.lon]} icon={safeZoneIcon}>
+            <Popup>
+              <b>🟢 Evacuation Safe Zone ({zone.distance_km}km)</b><br />
+              Direction: {zone.direction}
+            </Popup>
+          </Marker>
+        ))}
       </MapContainer>
 
       <style>{`

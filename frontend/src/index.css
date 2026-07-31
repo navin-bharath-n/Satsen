@@ -1,3 +1,28 @@
+/* 🚀 SatSen Premium UI Theme Stylesheet */
+
+:root {
+  --bg-primary: #030712;
+  --bg-secondary: #0b0f19;
+  --border-glow: rgba(6, 182, 212, 0.2);
+  --border-light: rgba(255, 255, 255, 0.08);
+  
+  /* Sci-Fi Theme Accents */
+  --accent-cyan: #06b6d4;
+  --accent-blue: #3b82f6;
+  --accent-emerald: #10b981;
+  --accent-red: #ef4444;
+  --accent-amber: #f59e0b;
+
+  /* Font Families */
+  --font-display: 'Outfit', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  
+  /* Glassmorphism Presets */
+  --glass-bg: rgba(11, 15, 25, 0.65);
+  --glass-blur: blur(16px);
+  --glass-shadow: 0 8px 32px 0 rgba(3, 7, 18, 0.5);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -5,20 +30,18 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: var(--font-body);
+  background-color: var(--bg-primary);
+  background-image:
+    linear-gradient(to bottom, rgba(3, 7, 18, 0.95), rgba(11, 15, 25, 1)),
+    linear-gradient(var(--border-glow) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-glow) 1px, transparent 1px);
+  background-size: 100% 100%, 60px 60px, 60px 60px;
+  background-attachment: fixed;
+  color: #f1f5f9;
+  min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #040814;
-  background-image:
-    linear-gradient(to bottom, rgba(4, 8, 20, 0.9), rgba(2, 4, 10, 1)),
-    linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 100% 100%, 40px 40px, 40px 40px;
-  background-attachment: fixed;
-  color: #e0f2fe;
-  min-height: 100vh;
 }
 
 #root {
@@ -27,45 +50,67 @@ body {
   overflow: hidden;
 }
 
-html,
-body {
+html, body {
   height: 100%;
   overflow: hidden;
 }
 
-/* Leaflet map fixes */
+/* Modern Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-cyan);
+}
+
+/* Leaflet Overrides for futuristic maps */
 .leaflet-container {
   height: 100% !important;
   width: 100% !important;
-  min-height: 600px !important;
+  background-color: var(--bg-secondary) !important;
+  font-family: var(--font-body) !important;
   z-index: 0;
   position: relative !important;
 }
 
-.leaflet-pane {
-  z-index: 400;
+.leaflet-bar {
+  border: 1px solid var(--border-light) !important;
+  box-shadow: var(--glass-shadow) !important;
 }
 
-.leaflet-tile-pane {
-  z-index: 200;
+.leaflet-bar a {
+  background-color: var(--glass-bg) !important;
+  color: #fff !important;
+  border-bottom: 1px solid var(--border-light) !important;
+  backdrop-filter: var(--glass-blur);
+  transition: all 0.2s ease;
 }
 
-.leaflet-overlay-pane {
-  z-index: 400;
+.leaflet-bar a:hover {
+  background-color: rgba(6, 182, 212, 0.2) !important;
+  color: var(--accent-cyan) !important;
 }
 
-.leaflet-shadow-pane {
-  z-index: 500;
+.leaflet-popup-content-wrapper {
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  border: 1px solid var(--border-glow) !important;
+  color: #f1f5f9 !important;
+  border-radius: 12px !important;
+  box-shadow: var(--glass-shadow) !important;
 }
 
-.leaflet-marker-pane {
-  z-index: 600;
-}
-
-.leaflet-tooltip-pane {
-  z-index: 650;
-}
-
-.leaflet-popup-pane {
-  z-index: 700;
+.leaflet-popup-tip {
+  background: var(--bg-secondary) !important;
 }

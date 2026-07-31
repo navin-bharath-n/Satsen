@@ -1,0 +1,487 @@
+/* ==========================================
+   ControlCenter.css
+   Futuristic AI Fire Command Center
+========================================== */
+
+:root {
+    --bg: #07111f;
+    --panel: rgba(10, 20, 35, 0.82);
+    --panel-border: rgba(0, 255, 255, 0.18);
+
+    --cyan: #00f7ff;
+    --blue: #4cc9ff;
+    --green: #38ff9c;
+    --red: #ff3b5f;
+    --orange: #ff9800;
+    --white: #f4f7ff;
+    --text: #d8e6ff;
+}
+
+/* ==========================================
+   MAIN CONTAINER
+========================================== */
+
+.control-center {
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at top, #11264b 0%, #07111f 45%, #02060f 100%);
+    color: var(--white);
+    position: relative;
+}
+
+/* Animated Grid */
+
+.control-center::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+
+    background-image:
+        linear-gradient(rgba(0, 255, 255, .05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 255, .05) 1px, transparent 1px);
+
+    background-size: 40px 40px;
+    animation: moveGrid 15s linear infinite;
+
+    pointer-events: none;
+}
+
+@keyframes moveGrid {
+
+    from {
+        transform: translateY(0);
+    }
+
+    to {
+        transform: translateY(40px);
+    }
+
+}
+
+/* ==========================================
+   HEADER
+========================================== */
+
+.control-header {
+
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+
+    z-index: 500;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 15px 25px;
+
+    background: rgba(8, 15, 30, .88);
+
+    backdrop-filter: blur(20px);
+
+    border-bottom: 1px solid rgba(0, 255, 255, .15);
+
+}
+
+.control-title {
+
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 2px;
+
+    color: var(--cyan);
+
+    text-shadow:
+        0 0 10px var(--cyan),
+        0 0 30px rgba(0, 255, 255, .4);
+
+}
+
+.control-actions {
+
+    display: flex;
+    gap: 15px;
+
+}
+
+/* ==========================================
+   BUTTONS
+========================================== */
+
+.control-btn {
+
+    padding: 12px 22px;
+
+    border: none;
+    border-radius: 12px;
+
+    cursor: pointer;
+
+    color: white;
+
+    background: linear-gradient(135deg,
+            rgba(0, 255, 255, .18),
+            rgba(0, 130, 255, .18));
+
+    backdrop-filter: blur(10px);
+
+    border: 1px solid rgba(0, 255, 255, .25);
+
+    transition: .3s;
+
+    font-weight: 600;
+
+    letter-spacing: .5px;
+
+}
+
+.control-btn:hover {
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 0 15px rgba(0, 255, 255, .4);
+
+}
+
+.control-btn:active {
+
+    transform: scale(.96);
+
+}
+
+/* ==========================================
+   MAP
+========================================== */
+
+.map-wrapper {
+
+    position: absolute;
+
+    inset: 65px 0 0 0;
+
+}
+
+.map-wrapper .leaflet-container {
+
+    width: 100%;
+    height: 100%;
+
+    background: #050d18;
+
+}
+
+/* ==========================================
+   ALERT PANEL
+========================================== */
+
+.alert-panel {
+
+    position: absolute;
+
+    bottom: 30px;
+    left: 30px;
+
+    width: 350px;
+
+    background: rgba(15, 20, 35, .92);
+
+    backdrop-filter: blur(18px);
+
+    border: 1px solid rgba(255, 0, 0, .4);
+
+    border-radius: 18px;
+
+    padding: 22px;
+
+    box-shadow:
+
+        0 0 40px rgba(255, 0, 0, .15);
+
+    animation: pulseAlert 1.5s infinite;
+
+}
+
+.alert-title {
+
+    color: var(--red);
+
+    font-size: 24px;
+
+    font-weight: 700;
+
+    margin-bottom: 12px;
+
+}
+
+.alert-text {
+
+    color: #ffffffcc;
+
+    line-height: 1.7;
+
+    font-size: 15px;
+
+}
+
+@keyframes pulseAlert {
+
+    0% {
+
+        transform: scale(1);
+
+        box-shadow: 0 0 10px rgba(255, 0, 0, .25);
+
+    }
+
+    50% {
+
+        transform: scale(1.02);
+
+        box-shadow: 0 0 35px rgba(255, 0, 0, .55);
+
+    }
+
+    100% {
+
+        transform: scale(1);
+
+        box-shadow: 0 0 10px rgba(255, 0, 0, .25);
+
+    }
+
+}
+
+/* ==========================================
+   STATUS CARD
+========================================== */
+
+.status-card {
+
+    position: absolute;
+
+    top: 95px;
+    left: 25px;
+
+    width: 260px;
+
+    background: var(--panel);
+
+    backdrop-filter: blur(20px);
+
+    border: 1px solid var(--panel-border);
+
+    border-radius: 18px;
+
+    padding: 20px;
+
+    box-shadow:
+
+        0 10px 40px rgba(0, 0, 0, .35);
+
+}
+
+.status-card h3 {
+
+    color: var(--cyan);
+
+    margin-bottom: 12px;
+
+}
+
+.status-item {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    margin: 8px 0;
+
+    color: #d7e4ff;
+
+}
+
+.online {
+
+    color: var(--green);
+
+}
+
+.offline {
+
+    color: var(--red);
+
+}
+
+/* ==========================================
+   GLOBE MODE
+========================================== */
+
+.globe-wrapper {
+
+    position: absolute;
+
+    inset: 65px 0 0 0;
+
+}
+
+canvas {
+
+    display: block;
+
+}
+
+/* ==========================================
+   POPUP
+========================================== */
+
+.leaflet-popup-content-wrapper {
+
+    background: #08121f;
+
+    color: white;
+
+    border: 1px solid rgba(0, 255, 255, .2);
+
+}
+
+.leaflet-popup-tip {
+
+    background: #08121f;
+
+}
+
+/* ==========================================
+   SCROLLBAR
+========================================== */
+
+::-webkit-scrollbar {
+
+    width: 10px;
+
+}
+
+::-webkit-scrollbar-thumb {
+
+    background: linear-gradient(var(--cyan),
+            #008cff);
+
+    border-radius: 50px;
+
+}
+
+::-webkit-scrollbar-track {
+
+    background: #08111f;
+
+}
+
+/* ==========================================
+   FLASH MODE
+========================================== */
+
+.siren-active {
+
+    animation: sirenFlash .6s infinite;
+
+}
+
+@keyframes sirenFlash {
+
+    0% {
+
+        filter: brightness(100%);
+
+    }
+
+    50% {
+
+        filter: brightness(125%);
+
+    }
+
+    100% {
+
+        filter: brightness(100%);
+
+    }
+
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media(max-width:900px) {
+
+    .control-header {
+
+        flex-direction: column;
+        gap: 15px;
+
+    }
+
+    .control-actions {
+
+        width: 100%;
+        justify-content: center;
+
+    }
+
+    .alert-panel {
+
+        width: 90%;
+
+        left: 5%;
+
+    }
+
+    .status-card {
+
+        width: 90%;
+
+        left: 5%;
+
+    }
+
+}
+
+@media(max-width:600px) {
+
+    .control-title {
+
+        font-size: 18px;
+
+    }
+
+    .control-btn {
+
+        font-size: 13px;
+
+        padding: 10px 14px;
+
+    }
+
+    .alert-title {
+
+        font-size: 18px;
+
+    }
+
+    .alert-text {
+
+        font-size: 13px;
+
+    }
+
+    .status-card {
+
+        padding: 15px;
+
+    }
+
+}

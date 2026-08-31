@@ -76,7 +76,8 @@ backend/training/fire_timeseries.csv
 backend/training/cnn_images/
 
 # Full training directory (weights + data)
-backend/training/
+backend/training/*
+!backend/training/**/*.py
 
 
 # ─────────────────────────────
@@ -125,3 +126,4 @@ ehthumbs.db
 *.bak
 *.tmp
 *.temp
+backend/fire_results.json

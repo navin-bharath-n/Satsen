@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import {
   MapContainer,
   TileLayer,
@@ -13,6 +14,7 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.heat";
+import "./EmergencyControl.css";
 
 const userIcon = new L.Icon({
   iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
@@ -42,7 +44,7 @@ function AutoZoom({ alert }) {
   useEffect(() => {
     if (alert?.lat && alert?.lon) {
       setTimeout(() => {
-        map.flyTo([alert.lat, alert.lon], 12, {
+        map.flyTo([alert.lat, alert.lon], 11, {
           animate: true,
           duration: 2
         });
@@ -54,12 +56,14 @@ function AutoZoom({ alert }) {
 }
 
 export default function EmergencyControl() {
+  const navigate = useNavigate();
 
   const [events, setEvents] = useState([]);
   const [alert, setAlert] = useState(null);
   const [spreadScale, setSpreadScale] = useState(1);
   const [flash, setFlash] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(true);
 
   const sirenRef = useRef(null);
 
@@ -69,6 +73,13 @@ export default function EmergencyControl() {
     audio.loop = true;
     audio.preload = "auto";
     sirenRef.current = audio;
+
+    return () => {
+      if (sirenRef.current) {
+        sirenRef.current.pause();
+        sirenRef.current = null;
+      }
+    };
   }, []);
 
   /* ---------------- UNLOCK AUDIO ON FIRST CLICK ---------------- */
@@ -142,16 +153,14 @@ export default function EmergencyControl() {
 
   /* ---------------- EMERGENCY TRIGGER ---------------- */
   const triggerEmergency = (data) => {
-
     console.log("🚨 EMERGENCY TRIGGERED");
-
     setAlert(data);
     setFlash(true);
+    setShowOverlay(true);
 
     // 🔊 FORCE SIREN
     if (sirenRef.current) {
       sirenRef.current.currentTime = 0;
-
       sirenRef.current.play()
         .then(() => {
           console.log("🔥 SIREN PLAYING");
@@ -166,14 +175,29 @@ export default function EmergencyControl() {
 
   /* ---------------- VOICE ---------------- */
   const speakEvacuation = (data) => {
-    const text =
-      `Emergency alert. ${data.severity} forest fire detected.
-       Evacuate immediately.`;
+    const text = `Emergency alert. Level ${data.severity} forest fire detected near your location. Evacuate immediately towards the ${data.evacuation_direction || "safe zone"}.`;
 
     const msg = new SpeechSynthesisUtterance(text);
-    msg.rate = 0.9;
+    msg.rate = 0.95;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(msg);
+  };
+
+  const handleDeactivate = () => {
+    if (sirenRef.current) {
+      sirenRef.current.pause();
+      sirenRef.current.currentTime = 0;
+    }
+    setFlash(false);
+    navigate("/dashboard");
+  };
+
+  const handleAcknowledgeAlert = () => {
+    setShowOverlay(false);
+    setFlash(false);
+    if (sirenRef.current) {
+      sirenRef.current.pause();
+    }
   };
 
   const getColor = (severity) => {
@@ -210,113 +234,194 @@ export default function EmergencyControl() {
   }
 
   return (
-    <div style={{
-      height: "100vh",
-      background: flash ? "#7f1d1d" : "#0f172a",
-      color: "white",
-      position: "relative",
-      overflow: "hidden"
-    }}>
-
-      {/* FLASH */}
-      {flash && (
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          background: "rgba(255,0,0,0.4)",
-          animation: "flash 1s infinite",
-          zIndex: 1000
-        }} />
+    <div className="emergency-control-container">
+      {/* UNLOCK AUDIO OVERLAY IF NEEDED */}
+      {!audioReady && (
+        <>
+          <div className="unlock-overlay" />
+          <button className="unlock-audio-btn">
+            🔓 INITIALIZE EMERGENCY AUDIO
+          </button>
+        </>
       )}
 
-      {/* ALERT OVERLAY */}
-      {alert && (
-        <div style={{
-          position: "absolute",
-          top: "25%",
-          width: "100%",
-          textAlign: "center",
-          zIndex: 1100
-        }}>
-          <h1 style={{
-            fontSize: "4rem",
-            color: "red",
-            textShadow: "0 0 30px red"
-          }}>
-            🚨 EMERGENCY ALERT 🚨
-          </h1>
-
-          <h2 style={{ fontSize: "2.5rem" }}>
-            {alert.severity} FIRE
-          </h2>
+      {/* SATSEN HUD HEADER */}
+      <header className="emergency-header">
+        <div className="emergency-logo-group">
+          <span style={{ fontSize: "1.6rem" }}>🚨</span>
+          <span className="emergency-title">SATSEN CRITICAL ALARM PANEL</span>
         </div>
-      )}
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <span style={{ 
+            fontSize: "0.75rem", 
+            letterSpacing: "1.5px", 
+            color: "#ff3b30", 
+            background: "rgba(255,59,48,0.1)", 
+            padding: "4px 10px", 
+            borderRadius: "4px",
+            border: "1px solid rgba(255,59,48,0.25)",
+            fontFamily: "Orbitron" 
+          }}>
+            STATUS: ACTIVE DANGER
+          </span>
+          <button className="deactivate-btn" onClick={handleDeactivate}>
+            🔕 DEACTIVATE SIREN & RETURN
+          </button>
+        </div>
+      </header>
 
-      <MapContainer
-        center={[20.5937, 78.9629]}
-        zoom={6}
-        style={{ height: "100%" }}
-      >
-        <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        />
+      <div className={`emergency-wrapper ${flash ? "emergency-active" : ""}`}>
+        <div className="emergency-grid">
+          
+          {/* LEFT SIDEBAR HUD READOUT */}
+          <aside className="emergency-sidebar">
+            {/* THREAT ANALYSIS CARD */}
+            <div className="hud-panel">
+              <div className="hud-panel-title">📡 THREAT TELEMETRY</div>
+              <div className="telemetry-row">
+                <span className="telemetry-label">SECTOR REGION</span>
+                <span className="telemetry-val">{alert?.district || "Unknown"}, {alert?.state || "Unknown"}</span>
+              </div>
+              <div className="telemetry-row">
+                <span className="telemetry-label">COORDINATES</span>
+                <span className="telemetry-val">
+                  {alert?.lat?.toFixed(4) || "0.0000"}, {alert?.lon?.toFixed(4) || "0.0000"}
+                </span>
+              </div>
+              <div className="telemetry-row">
+                <span className="telemetry-label">SEVERITY LEVEL</span>
+                <span className="telemetry-val" style={{ color: "#ff3b30" }}>
+                  {alert?.severity || "HIGH"}
+                </span>
+              </div>
+              <div className="telemetry-row">
+                <span className="telemetry-label">SPREAD RISK (LSTM)</span>
+                <span className="telemetry-val" style={{ color: "#ffb800" }}>
+                  {alert?.advancedWeather?.lstmSpreadRisk || "EXTREME"}
+                </span>
+              </div>
+            </div>
 
-        <AutoZoom alert={alert} />
-        <HeatmapLayer events={events} />
+            {/* EVACUATION GUIDANCE CARD */}
+            <div className="hud-panel">
+              <div className="hud-panel-title">🟢 ESCAPE VECTORS</div>
+              <div className="readout-box">
+                <div className="telemetry-label">RECOMMENDED ESCAPE DIRECTION</div>
+                <div className="readout-large readout-green">
+                  {alert?.evacuation_direction || "NE"}
+                </div>
+              </div>
+              <div className="telemetry-row">
+                <span className="telemetry-label">SAFE DISTANCE TARGET</span>
+                <span className="telemetry-val">&gt; 10 Kilometers</span>
+              </div>
+              <button 
+                className="voice-replay-btn" 
+                onClick={() => alert && speakEvacuation(alert)}
+                style={{ marginTop: "10px" }}
+              >
+                🎙️ REPLAY ESCAPE AUDIO
+              </button>
+            </div>
 
-        {events.map(e => (
-          <Circle
-            key={e.id}
-            center={[e.lat, e.lon]}
-            radius={5000 * spreadScale}
-            pathOptions={{
-              color: getColor(e.severity),
-              fillOpacity: 0.4
-            }}
-          />
-        ))}
+            {/* SAFE ZONE DIRECTIVES */}
+            <div className="hud-panel" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+              <div className="hud-panel-title">🛡️ VERIFIED REFUGE ZONES</div>
+              <div style={{ flex: 1, overflowY: "auto" }}>
+                {alert?.safety_zones && alert.safety_zones.map((zone, idx) => (
+                  <div key={idx} className="safe-zone-card">
+                    <div className="safe-zone-name">🟢 {zone.name}</div>
+                    <div className="safe-zone-details">
+                      <span>DISTANCE: {zone.distance_km}km</span>
+                      <span>DIRECTION: {zone.direction}</span>
+                    </div>
+                  </div>
+                )) || (
+                  <div style={{ color: "#64748b", fontSize: "0.85rem", fontStyle: "italic", textAlign: "center", marginTop: "20px" }}>
+                    Loading safe zone vectors...
+                  </div>
+                )}
+              </div>
+            </div>
+          </aside>
 
-        {alert && (
-          <Marker position={[alert.lat, alert.lon]} icon={userIcon}>
-            <Popup>
-              <b>📍 Evacuating User Location</b><br />
-              Coordinates: {alert.lat.toFixed(4)}, {alert.lon.toFixed(4)}
-            </Popup>
-          </Marker>
-        )}
+          {/* MAIN INTERACTIVE LEAFLET MAP AREA */}
+          <main className="emergency-map-area">
+            <MapContainer
+              center={[20.5937, 78.9629]}
+              zoom={6}
+              style={{ height: "100%" }}
+            >
+              <TileLayer
+                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              />
 
-        {alert && alert.route && (
-          <Polyline
-            positions={alert.route.coordinates.map(coord => [coord[1], coord[0]])}
-            pathOptions={{ color: "lime", weight: 6, opacity: 0.85 }}
-          />
-        )}
+              <AutoZoom alert={alert} />
+              <HeatmapLayer events={events} />
 
-        {alert && alert.fire_polygon && (
-          <Polygon
-            positions={alert.fire_polygon.coordinates[0].map(coord => [coord[1], coord[0]])}
-            pathOptions={{ color: "red", fillColor: "red", fillOpacity: 0.35, weight: 3 }}
-          />
-        )}
+              {events.map(e => (
+                <Circle
+                  key={e.id}
+                  center={[e.lat, e.lon]}
+                  radius={5000 * spreadScale}
+                  pathOptions={{
+                    color: getColor(e.severity),
+                    fillOpacity: 0.4
+                  }}
+                />
+              ))}
 
-        {alert && alert.safety_zones && alert.safety_zones.map((zone, idx) => (
-          <Marker key={idx} position={[zone.lat, zone.lon]} icon={safeZoneIcon}>
-            <Popup>
-              <b>🟢 Evacuation Safe Zone ({zone.distance_km}km)</b><br />
-              Direction: {zone.direction}
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
+              {alert && (
+                <Marker position={[alert.lat, alert.lon]} icon={userIcon}>
+                  <Popup>
+                    <b>📍 Evacuating User Location</b><br />
+                    Coordinates: {alert.lat.toFixed(4)}, {alert.lon.toFixed(4)}
+                  </Popup>
+                </Marker>
+              )}
 
-      <style>{`
-        @keyframes flash {
-          0% {opacity: 0.2;}
-          50% {opacity: 0.7;}
-          100% {opacity: 0.2;}
-        }
-      `}</style>
+              {alert && alert.route && (
+                <Polyline
+                  positions={alert.route.coordinates.map(coord => [coord[1], coord[0]])}
+                  pathOptions={{ color: "lime", weight: 6, opacity: 0.85 }}
+                />
+              )}
 
+              {alert && alert.fire_polygon && (
+                <Polygon
+                  positions={alert.fire_polygon.coordinates[0].map(coord => [coord[1], coord[0]])}
+                  pathOptions={{ color: "red", fillColor: "red", fillOpacity: 0.35, weight: 3 }}
+                />
+              )}
+
+              {alert && alert.safety_zones && alert.safety_zones.map((zone, idx) => (
+                <Marker key={idx} position={[zone.lat, zone.lon]} icon={safeZoneIcon}>
+                  <Popup>
+                    <b>🟢 Evacuation Safe Zone ({zone.distance_km}km)</b><br />
+                    Direction: {zone.direction}
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+
+            {/* FULLSCREEN POPUP MODAL OVERLAY */}
+            {alert && showOverlay && (
+              <div className="alert-box-overlay">
+                <div style={{ fontSize: "4.5rem", marginBottom: "10px" }}>🚨</div>
+                <h1 className="alert-main-title">CRITICAL ALARM</h1>
+                <h2 className="alert-sub-title">FOREST FIRE DETECTED IN PROXIMITY</h2>
+                <div style={{ color: "#fecaca", fontSize: "1.1rem", marginBottom: "25px", lineHeight: "1.6", maxWidth: "420px", marginLeft: "auto", marginRight: "auto" }}>
+                  Active fire registered in <strong style={{ color: "#fff" }}>{alert.district}</strong>. Recommended evacuation escape direction is <strong style={{ color: "#00ff95", fontSize: "1.2rem" }}>{alert.evacuation_direction || "NE"}</strong>.
+                </div>
+                <button className="dismiss-overlay-btn" onClick={handleAcknowledgeAlert}>
+                  Acknowledge Warning
+                </button>
+              </div>
+            )}
+          </main>
+
+        </div>
+      </div>
     </div>
   );
 }

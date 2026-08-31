@@ -23,16 +23,19 @@ app.add_middleware(
 # ======================
 # CONFIG
 # ======================
-MODEL_PATH = "training/fire_cnn.pth"
+BEST_MODEL_PATH = "training/best_fire_cnn.pth"
+FALLBACK_MODEL_PATH = "training/fire_cnn.pth"
+MODEL_PATH = BEST_MODEL_PATH if os.path.exists(BEST_MODEL_PATH) else FALLBACK_MODEL_PATH
+
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 CLASSES = ["nowildfire", "wildfire"]
-FIRE_CONFIDENCE_THRESHOLD = 0.6
+FIRE_CONFIDENCE_THRESHOLD = 0.5  # Optimal balanced threshold for fire detection
 
 # ======================
-# TRANSFORMS (IMAGENET)
+# TRANSFORMS (IMAGENET - 224x224 MATCHING RESNET18 TRAINING)
 # ======================
 transform = transforms.Compose([
-    transforms.Resize((128, 128)),
+    transforms.Resize((224, 224)),
     transforms.ToTensor(),
     transforms.Normalize(
         mean=[0.485, 0.456, 0.406],
@@ -47,7 +50,7 @@ model = models.resnet18(weights=None)
 model.fc = nn.Linear(model.fc.in_features, 2)
 
 if not os.path.exists(MODEL_PATH):
-    raise RuntimeError("❌ fire_cnn.pth not found. Train model first.")
+    raise RuntimeError(f"❌ Model file not found at {MODEL_PATH}. Train model first.")
 
 model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
 model.eval()

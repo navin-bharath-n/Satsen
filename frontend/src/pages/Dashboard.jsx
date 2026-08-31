@@ -69,10 +69,10 @@ function EarthGlobe() {
         <sphereGeometry args={[2.03, 64, 64]} />
         <meshStandardMaterial
           map={new THREE.TextureLoader().load(
-            "https://threejs.org/examples/textures/land_ocean_ice_cloud_2048.jpg"
+            "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_clouds_1024.png"
           )}
           transparent
-          opacity={0.3}
+          opacity={0.4}
           depthWrite={false}
         />
       </mesh>
@@ -218,15 +218,25 @@ export default function Dashboard() {
   const [showEvents, setShowEvents] = useState(true);
   const [userLocation, setUserLocation] = useState(null);
   const [safetyStatus, setSafetyStatus] = useState(null);
+  const [alertAcknowledged, setAlertAcknowledged] = useState(false);
   const [sandboxMode, setSandboxMode] = useState(() => localStorage.getItem("sandboxMode") === "true");
   const [mapFocus, setMapFocus] = useState(null);
   const [fireping, setFireping] = useState({ status: "Active" });
   
   // JARVIS AI Voice states
   const [jarvisReply, setJarvisReply] = useState("SATSEN Orbiter tracking. Ready for queries.");
+  const [jarvisHistory, setJarvisHistory] = useState([
+    { sender: "JARVIS", text: "SATSEN Orbiter tracking. Ready for queries." }
+  ]);
   const [userInputText, setUserInputText] = useState("");
   const [sirenMode, setSirenMode] = useState(false);
   const [radarPulse, setRadarPulse] = useState(true);
+  const [isListening, setIsListening] = useState(false);
+  const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [jarvisHistory]);
 
   const navigate = useNavigate();
 
@@ -236,6 +246,73 @@ export default function Dashboard() {
     utterance.rate = 0.95;
     utterance.pitch = 0.85; // sci-fi JARVIS feel
     window.speechSynthesis.speak(utterance);
+  };
+
+  const startListening = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Web Speech API is not supported in this browser. Please type your query.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      setJarvisHistory(prev => [...prev, { sender: "JARVIS", text: "SATSEN voice node listening... speak now." }]);
+    };
+
+    recognition.onresult = async (event) => {
+      const speechToText = event.results[0][0].transcript;
+      setIsListening(false);
+      setJarvisHistory(prev => [
+        ...prev, 
+        { sender: "USER", text: speechToText },
+        { sender: "JARVIS", text: "Processing voice transmission..." }
+      ]);
+
+      try {
+        const res = await axios.post(`${API}/openai-disaster-chat`, {
+          message: speechToText,
+          events: events,
+          user_lat: userLocation?.lat,
+          user_lon: userLocation?.lon
+        });
+        const reply = res.data.reply;
+        setJarvisHistory(prev => {
+          const list = [...prev];
+          if (list[list.length - 1]?.text === "Processing voice transmission...") {
+            list.pop();
+          }
+          return [...list, { sender: "JARVIS", text: reply }];
+        });
+        jarvisSpeak(reply);
+      } catch (err) {
+        console.error(err);
+        setJarvisHistory(prev => {
+          const list = [...prev];
+          if (list[list.length - 1]?.text === "Processing voice transmission...") {
+            list.pop();
+          }
+          return [...list, { sender: "JARVIS", text: "Telemetry link degraded. Unable to parse query." }];
+        });
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error(event.error);
+      setIsListening(false);
+      setJarvisHistory(prev => [...prev, { sender: "JARVIS", text: "Voice transmission failed. Noise interference detected." }]);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
   };
 
   /* ---------------- FETCH EVENTS ---------------- */
@@ -334,6 +411,7 @@ export default function Dashboard() {
           setSafetyStatus(res.data);
 
           if (res.data?.danger) {
+            setAlertAcknowledged(false);
             setSirenMode(true);
             jarvisSpeak("Emergency. Active forest fire detected in your immediate proximity. Please evacuate immediately.");
           }
@@ -347,27 +425,43 @@ export default function Dashboard() {
   }, [sandboxMode]);
 
   /* ---------------- JARVIS CHAT SUBMISSION ---------------- */
-  const handleJarvisChat = (e) => {
+  const handleJarvisChat = async (e) => {
     e.preventDefault();
     if (!userInputText.trim()) return;
 
-    const query = userInputText.toLowerCase();
+    const query = userInputText;
     setUserInputText("");
+    setJarvisHistory(prev => [
+      ...prev,
+      { sender: "USER", text: query },
+      { sender: "JARVIS", text: "Analyzing telemetry channels..." }
+    ]);
 
-    if (query.includes("status") || query.includes("fire") || query.includes("how many")) {
-      const reply = `Active hotspots detected: ${events.length}. Neural net outputs indicate ${events.filter(e => e.severity === 'HIGH').length} critical risk zones.`;
-      setJarvisReply(reply);
+    try {
+      const res = await axios.post(`${API}/openai-disaster-chat`, {
+        message: query,
+        events: events,
+        user_lat: userLocation?.lat,
+        user_lon: userLocation?.lon
+      });
+      const reply = res.data.reply;
+      setJarvisHistory(prev => {
+        const list = [...prev];
+        if (list[list.length - 1]?.text === "Analyzing telemetry channels...") {
+          list.pop();
+        }
+        return [...list, { sender: "JARVIS", text: reply }];
+      });
       jarvisSpeak(reply);
-    } else if (query.includes("evacuate") || query.includes("route") || query.includes("safety")) {
-      const reply = safetyStatus?.danger 
-        ? `Immediate threat registered. Safe Zone direction is towards ${safetyStatus.evacuation_direction}. Follow green path on HUD.`
-        : "No active hazard coordinates detected in your area. Systems remaining nominal.";
-      setJarvisReply(reply);
-      jarvisSpeak(reply);
-    } else {
-      const reply = "Processing command... Satellite telemetry streams online. SATSEN neural algorithms are maintaining monitoring.";
-      setJarvisReply(reply);
-      jarvisSpeak(reply);
+    } catch (err) {
+      console.error(err);
+      setJarvisHistory(prev => {
+        const list = [...prev];
+        if (list[list.length - 1]?.text === "Analyzing telemetry channels...") {
+          list.pop();
+        }
+        return [...list, { sender: "JARVIS", text: "Telemetry link degraded. Unable to parse query." }];
+      });
     }
   };
 
@@ -420,7 +514,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {safetyStatus?.danger && (
+      {safetyStatus?.danger && !alertAcknowledged && (
         <div className="hud-emergency-overlay">
           <div className="hud-emergency-box">
             <span style={{ fontSize: "3.5rem" }}>🚨</span>
@@ -430,7 +524,10 @@ export default function Dashboard() {
               Evacuation direction: <strong style={{ color: "#00ff95", fontSize: "1.3rem" }}>{safetyStatus.evacuation_direction}</strong>.
               Please leave immediately and travel towards safe coordinates.
             </p>
-            <button className="hud-emergency-btn" onClick={() => setSirenMode(false)}>Acknowledge Alert</button>
+            <button className="hud-emergency-btn" onClick={() => {
+              setSirenMode(false);
+              setAlertAcknowledged(true);
+            }}>Acknowledge Alert</button>
           </div>
         </div>
       )}
@@ -490,8 +587,8 @@ export default function Dashboard() {
           {mapView === "globe" ? (
             <div style={{ height: "100%", width: "100%", background: "#020408" }}>
               <Canvas camera={{ position: [0, 0, 5.5], fov: 45 }}>
-                <ambientLight intensity={1.5} />
-                <directionalLight position={[6, 6, 6]} intensity={1.5} />
+                <ambientLight intensity={0.35} />
+                <directionalLight position={[5, 3, 5]} intensity={2.2} />
                 <EarthGlobe />
                 <OrbitControls autoRotate autoRotateSpeed={0.8} enableZoom={true} />
               </Canvas>
@@ -581,10 +678,16 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Hologram Voice Waveform */}
-          <div style={{ background: "rgba(0, 0, 0, 0.25)", border: "1px dashed rgba(0,229,255,0.2)", borderRadius: "8px", padding: "12px", marginBottom: "16px", textAlign: "center" }}>
-            <div style={{ fontSize: "0.65rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: "8px" }}>Spectral Voice Node</div>
-            <div className="jarvis-wave-container">
+          {/* Clickable Hologram Voice Waveform Button */}
+          <div 
+            className={`jarvis-voice-btn ${isListening ? "listening" : ""}`}
+            onClick={startListening}
+            title="Click to start voice communication"
+          >
+            <div style={{ fontSize: "0.65rem", color: isListening ? "#ff3b30" : "#64748b", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: "8px", fontWeight: "bold" }}>
+              {isListening ? "🎙️ LISTENING TO SECURE CHANNEL..." : "📡 CLICK FOR VOICE TRANSMISSION"}
+            </div>
+            <div className={`jarvis-wave-container ${isListening ? "listening" : ""}`}>
               <div className="voice-bar"></div>
               <div className="voice-bar"></div>
               <div className="voice-bar"></div>
@@ -593,14 +696,75 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* JARVIS Dialogue Readout */}
-          <div style={{ flex: 1, background: "rgba(5, 8, 22, 0.6)", border: "1px solid rgba(0,229,255,0.1)", borderRadius: "10px", padding: "16px", marginBottom: "16px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <div style={{ fontSize: "0.85rem", color: "#eafbff", lineHeight: "1.6", fontStyle: "italic", whiteSpace: "pre-line" }}>
-              "{jarvisReply}"
+          {/* JARVIS Dialogue Readout (Scrollable Conversation History) */}
+          <div style={{ 
+            flex: 1, 
+            background: "rgba(5, 8, 22, 0.6)", 
+            border: "1px solid rgba(0,229,255,0.1)", 
+            borderRadius: "10px", 
+            padding: "16px", 
+            marginBottom: "16px", 
+            display: "flex", 
+            flexDirection: "column", 
+            justifyContent: "space-between",
+            maxHeight: "260px",
+            minHeight: "180px"
+          }}>
+            <div style={{ 
+              flex: 1, 
+              overflowY: "auto", 
+              marginBottom: "8px", 
+              paddingRight: "6px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px"
+            }}>
+              {jarvisHistory.map((msg, idx) => (
+                <div 
+                  key={idx} 
+                  style={{ 
+                    alignSelf: msg.sender === "USER" ? "flex-end" : "flex-start",
+                    maxWidth: "85%",
+                    background: msg.sender === "USER" ? "rgba(0, 229, 255, 0.08)" : "rgba(255, 255, 255, 0.02)",
+                    border: msg.sender === "USER" ? "1px solid rgba(0, 229, 255, 0.25)" : "1px solid rgba(255, 255, 255, 0.08)",
+                    borderRadius: msg.sender === "USER" ? "12px 12px 2px 12px" : "12px 12px 12px 2px",
+                    padding: "8px 12px",
+                    fontSize: "0.82rem",
+                    lineHeight: "1.4",
+                    color: "#eafbff",
+                    fontStyle: msg.sender === "USER" ? "normal" : "italic"
+                  }}
+                >
+                  <div style={{ 
+                    fontSize: "0.6rem", 
+                    color: msg.sender === "USER" ? "#00e5ff" : "#88ccff", 
+                    fontWeight: "bold", 
+                    marginBottom: "4px",
+                    fontFamily: "Orbitron",
+                    letterSpacing: "0.5px"
+                  }}>
+                    {msg.sender}
+                  </div>
+                  <div style={{ whiteSpace: "pre-wrap" }}>
+                    {msg.text}
+                  </div>
+                </div>
+              ))}
+              <div ref={chatEndRef} />
             </div>
-            <div style={{ fontSize: "0.75rem", display: "flex", justifyContent: "space-between", color: "#00e5ff", borderTop: "1px solid rgba(0,229,255,0.1)", paddingTop: "8px", marginTop: "12px" }}>
-              <span>AI Neural Conf:</span>
-              <span style={{ fontWeight: "bold" }}>96.8%</span>
+            
+            <div style={{ 
+              fontSize: "0.72rem", 
+              display: "flex", 
+              justifyContent: "space-between", 
+              color: "#00e5ff", 
+              borderTop: "1px solid rgba(0,229,255,0.1)", 
+              paddingTop: "8px", 
+              marginTop: "4px",
+              fontFamily: "Share Tech Mono"
+            }}>
+              <span>SECURE UPLINK STATUS:</span>
+              <span style={{ fontWeight: "bold", color: "#00ff95" }}>SYNCHRONIZED (96.8%)</span>
             </div>
           </div>
 

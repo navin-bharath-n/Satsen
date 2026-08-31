@@ -107,6 +107,9 @@ export default function ManualFireUpload() {
 
   return (
     <div className="upload-container">
+      <button className="back-btn" onClick={() => navigate("/dashboard")}>
+        ← BACK TO DASHBOARD
+      </button>
       <motion.div
         className="upload-panel"
         initial={{ opacity: 0, scale: 0.95 }}

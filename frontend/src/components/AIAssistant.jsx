@@ -4,7 +4,7 @@ import "./AIAssistant.css";
 
 const API = "http://127.0.0.1:8000";
 
-function AIAssistant({ events }) {
+function AIAssistant({ events, userLocation }) {
   const [listening, setListening] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -12,10 +12,10 @@ function AIAssistant({ events }) {
   const [transcript, setTranscript] = useState("");
   const [inputText, setInputText] = useState("");
   const [chatHistory, setChatHistory] = useState([
-    { sender: "AI Core", text: "Hello Boss! I am your AI Disaster Assistant. Tap the microphone or type below to ask about active fires or escape routes." }
+    { sender: "SATSEN JARVIS AI", text: "Hello Boss! I am SATSEN JARVIS AI. Tap the microphone or type below to ask about active fires or escape routes." }
   ]);
 
-  const initialGreeting = "Hello Boss! I am your AI Disaster Assistant. Tap the microphone or type below to ask about active fires or escape routes.";
+  const initialGreeting = "Hello Boss! I am SATSEN JARVIS AI. Tap the microphone or type below to ask about active fires or escape routes.";
 
   const recognitionRef = useRef(null);
   const listeningRef = useRef(listening);
@@ -39,7 +39,9 @@ function AIAssistant({ events }) {
     try {
       const res = await axios.post(`${API}/openai-disaster-chat`, {
         message: queryText,
-        events: eventsRef.current
+        events: eventsRef.current,
+        user_lat: userLocation?.lat,
+        user_lon: userLocation?.lon
       });
 
       const reply = res.data.reply;
@@ -173,13 +175,13 @@ function AIAssistant({ events }) {
       {/* Expanding Panel */}
       <div className="ai-panel">
         <div className="ai-panel-header">
-          <h3>🎙️ AI Assistant</h3>
+          <h3>🎙️ SATSEN JARVIS AI</h3>
           <button className="close-btn" onClick={() => setIsOpen(false)}>×</button>
         </div>
 
         <div className="ai-chat-area">
           {chatHistory.map((chat, idx) => (
-            <div key={idx} className={`chat-bubble ${chat.sender === "AI Core" ? "ai-bubble" : "user-bubble"}`}>
+            <div key={idx} className={`chat-bubble ${chat.sender === "SATSEN JARVIS AI" ? "ai-bubble" : "user-bubble"}`}>
               <span className="sender">{chat.sender}</span>
               <p>{chat.text}</p>
             </div>

@@ -92,8 +92,12 @@ class FireLSTM(nn.Module):
         super().__init__()
         self.lstm = nn.LSTM(4, 32, batch_first=True)
         self.fc = nn.Linear(32, 3)
+        self.register_buffer("mean", torch.tensor([11.022466, 177.8312, 1.9988, 55.2473]))
+        self.register_buffer("std", torch.tensor([5.20969696, 103.75680437, 0.81514723, 20.59177372]))
 
     def forward(self, x):
+        # Normalize input
+        x = (x - self.mean) / self.std
         out, _ = self.lstm(x)
         return self.fc(out[:, -1])
 
@@ -112,12 +116,13 @@ except Exception as e:
 
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD  = [0.229, 0.224, 0.225]
-FIRE_THRESHOLD = 0.6
+FIRE_THRESHOLD = 0.40  # Optimal threshold: F1=0.9944, Precision=99.65%, Recall=99.22% (eval_thresholds.py)
 
 def load_fire_model():
     model = models.resnet18(weights=None)
     model.fc = nn.Linear(model.fc.in_features, 2)
-    model.load_state_dict(torch.load("training/fire_cnn.pth", map_location="cpu"))
+    path = "training/best_fire_cnn.pth" if os.path.exists("training/best_fire_cnn.pth") else "training/fire_cnn.pth"
+    model.load_state_dict(torch.load(path, map_location="cpu"))
     model.eval()
     return model
 
@@ -542,313 +547,6 @@ def get_fires():
     db.close()
     return result
 
-@app.post("/add-test-deforestation")
-def add_test_deforestation():
-    try:
-        db = Session()
-        
-        indian_states_mock_data = [
-            {"lat": 16.5, "lon": 80.6, "state": "Andhra Pradesh", "district": "Guntur"},
-            {"lat": 28.1, "lon": 94.6, "state": "Arunachal Pradesh", "district": "Siang"},
-            {"lat": 26.2, "lon": 92.9, "state": "Assam", "district": "Nagaon"},
-            {"lat": 25.6, "lon": 85.1, "state": "Bihar", "district": "Patna"},
-            {"lat": 21.3, "lon": 81.6, "state": "Chhattisgarh", "district": "Raipur"},
-            {"lat": 15.3, "lon": 74.1, "state": "Goa", "district": "North Goa"},
-            {"lat": 22.3, "lon": 71.1, "state": "Gujarat", "district": "Ahmedabad"},
-            {"lat": 29.0, "lon": 76.0, "state": "Haryana", "district": "Rohtak"},
-            {"lat": 31.1, "lon": 77.2, "state": "Himachal Pradesh", "district": "Shimla"},
-            {"lat": 23.4, "lon": 85.3, "state": "Jharkhand", "district": "Ranchi"},
-            {"lat": 15.0, "lon": 75.0, "state": "Karnataka", "district": "Dharwad"},
-            {"lat": 13.0, "lon": 77.5, "state": "Karnataka", "district": "Bangalore Urban"},
-            {"lat": 10.5, "lon": 76.5, "state": "Kerala", "district": "Palakkad"},
-            {"lat": 23.3, "lon": 77.4, "state": "Madhya Pradesh", "district": "Bhopal"},
-            {"lat": 19.1, "lon": 73.3, "state": "Maharashtra", "district": "Thane"},
-            {"lat": 19.8, "lon": 75.3, "state": "Maharashtra", "district": "Aurangabad"},
-            {"lat": 24.8, "lon": 93.9, "state": "Manipur", "district": "Imphal"},
-            {"lat": 25.5, "lon": 91.9, "state": "Meghalaya", "district": "East Khasi Hills"},
-            {"lat": 23.7, "lon": 92.7, "state": "Mizoram", "district": "Aizawl"},
-            {"lat": 26.2, "lon": 94.2, "state": "Nagaland", "district": "Kohima"},
-            {"lat": 20.3, "lon": 85.8, "state": "Odisha", "district": "Khurda"},
-            {"lat": 31.3, "lon": 75.3, "state": "Punjab", "district": "Jalandhar"},
-            {"lat": 26.9, "lon": 75.8, "state": "Rajasthan", "district": "Jaipur"},
-            {"lat": 24.6, "lon": 73.7, "state": "Rajasthan", "district": "Udaipur"},
-            {"lat": 27.3, "lon": 88.6, "state": "Sikkim", "district": "East Sikkim"},
-            {"lat": 10.8, "lon": 76.8, "state": "Tamil Nadu", "district": "Coimbatore"},
-            {"lat": 13.1, "lon": 80.3, "state": "Tamil Nadu", "district": "Chennai"},
-            {"lat": 17.4, "lon": 78.5, "state": "Telangana", "district": "Hyderabad"},
-            {"lat": 23.8, "lon": 91.3, "state": "Tripura", "district": "West Tripura"},
-            {"lat": 26.8, "lon": 81.0, "state": "Uttar Pradesh", "district": "Lucknow"},
-            {"lat": 30.3, "lon": 78.0, "state": "Uttarakhand", "district": "Dehradun"},
-            {"lat": 22.6, "lon": 88.4, "state": "West Bengal", "district": "Kolkata"},
-        ]
-
-        import random
-        
-        # Pre-defined attributes
-        risks = ["LOW", "MODERATE", "SEVERE", "CRITICAL"]
-        impacts = [
-            "Moderate impact on local wildlife.",
-            "High loss of biodiversity, soil erosion risks.",
-            "Severe groundwater depletion, drastic temperature rise.",
-            "Mild forest cover reduction."
-        ]
-
-        events = []
-        for st in indian_states_mock_data:
-            area = round(random.uniform(5.0, 50.0), 2)
-            risk = random.choice(risks)
-            impact = random.choice(impacts)
-            
-            # Simulate Sentinel-2 NDVI processing & CNN Output
-            # In a real scenario, this involves fetching Band 4 & Band 8 via API, computing matrix (NIR-R)/(NIR+R)
-            # and passing through the DeforestationCNN.
-            ndvi_shift = round(random.uniform(-0.1, -0.4), 3) # Negative shift indicates vegetation loss
-            
-            cnn_confidence = 0.0
-            if deforestation_cnn:
-                 # ResNet expects 3x224x224 or at least 3x128x128
-                 # Using the same transform logic from training script
-                 dummy_tensor = torch.rand(1, 3, 128, 128)
-                 # normalize
-                 mean = torch.tensor([0.485, 0.456, 0.406]).view(1,3,1,1)
-                 std = torch.tensor([0.229, 0.224, 0.225]).view(1,3,1,1)
-                 dummy_tensor = (dummy_tensor - mean) / std
-                 with torch.no_grad():
-                      cnn_confidence = round(deforestation_cnn(dummy_tensor).item(), 3)
-            else:
-                 cnn_confidence = round(random.uniform(0.65, 0.98), 3) 
-                 
-            
-            events.append({
-                "lat": st["lat"],
-                "lon": st["lon"],
-                "area_sq_km": area,
-                "risk_level": risk,
-                "environmental_impact": impact,
-                "district": st["district"],
-                "state": st["state"],
-                "ndvi_shift": ndvi_shift,
-                "cnn_confidence": cnn_confidence
-            })
-        
-        for e in events:
-            deforestation = DeforestationEvent(**e)
-            db.add(deforestation)
-            
-        db.commit()
-        db.close()
-        return {"message": f"Inserted {len(events)} test deforestation events across all states."}
-    except Exception as e:
-        import traceback
-        return {"error": str(e), "trace": traceback.format_exc()}
-
-@app.get("/deforestation-events")
-def get_deforestation_events():
-    db = Session()
-    events = db.query(DeforestationEvent).all()
-    result = []
-    for e in events:
-        result.append({
-            "id": e.id,
-            "lat": e.lat,
-            "lon": e.lon,
-            "area_sq_km": e.area_sq_km,
-            "risk_level": e.risk_level,
-            "environmental_impact": e.environmental_impact,
-            "district": e.district,
-            "state": e.state,
-            "ndvi_shift": e.ndvi_shift,
-            "cnn_confidence": e.cnn_confidence,
-            "t1_ndvi_url": getattr(e, "t1_ndvi_url", None),
-            "t2_ndvi_url": getattr(e, "t2_ndvi_url", None),
-            "timestamp": e.timestamp
-        })
-    db.close()
-    return result
-
-class DeforestationAnalyzeRequest(BaseModel):
-    lat: float
-    lon: float
-    start_t1: str = "2023-01-01"
-    end_t1: str = "2023-12-31"
-    start_t2: str = "2024-01-01"
-    end_t2: str = "2024-12-31"
-
-@app.post("/analyze-deforestation")
-def analyze_deforestation_real(req: DeforestationAnalyzeRequest):
-    try:
-        # 1. Fetch real NDVI shift from Google Earth Engine
-        shift = earth_engine_service.calculate_ndvi_change(
-            req.lat, req.lon, 
-            req.start_t1, req.end_t1, 
-            req.start_t2, req.end_t2
-        )
-        t1_url = earth_engine_service.get_ndvi_map_url(req.lat, req.lon, req.start_t1, req.end_t1)
-        t2_url = earth_engine_service.get_ndvi_map_url(req.lat, req.lon, req.start_t2, req.end_t2)
-        
-        # 2. Feed to CNN
-        cnn_conf = 0.0
-        if deforestation_cnn:
-            dummy_tensor = torch.rand(1, 3, 128, 128)
-            mean = torch.tensor([0.485, 0.456, 0.406]).view(1,3,1,1)
-            std = torch.tensor([0.229, 0.224, 0.225]).view(1,3,1,1)
-            dummy_tensor = (dummy_tensor - mean) / std
-            with torch.no_grad():
-                cnn_conf = round(deforestation_cnn(dummy_tensor).item(), 3)
-        else:
-            cnn_conf = 0.85 # Fallback
-            
-        location_info = reverse_geocode(req.lat, req.lon)
-        dist = location_info.get("district", "Unknown")
-        st = location_info.get("state", "Unknown")
-        
-        risk = "LOW"
-        if shift and shift < -0.2: risk = "SEVERE"
-        elif shift and shift < -0.1: risk = "MODERATE"
-        elif cnn_conf > 0.8: risk = "HIGH"
-        
-        db = Session()
-        new_event = DeforestationEvent(
-            lat=req.lat, lon=req.lon,
-            area_sq_km=random.uniform(5.0, 20.0), # Mock area for now
-            risk_level=risk,
-            environmental_impact="Detected via Real Sentinel-2 API",
-            district=dist, state=st,
-            ndvi_shift=shift if shift is not None else -0.15,
-            cnn_confidence=cnn_conf,
-            t1_ndvi_url=t1_url,
-            t2_ndvi_url=t2_url
-        )
-        db.add(new_event)
-        db.commit()
-        db.refresh(new_event)
-        event_id = new_event.id
-        db.close()
-        
-        return {
-            "status": "success", 
-            "event_id": event_id, 
-            "ndvi_shift": shift, 
-            "t1_url": t1_url, 
-            "t2_url": t2_url, 
-            "risk": risk
-        }
-        
-    except Exception as e:
-        import traceback
-        return {"error": str(e), "trace": traceback.format_exc()}
-
-
-def generate_deforestation_prediction(state: str, current_area_lost: float, hotspot_count: int):
-    """
-    AI Prediction Mock/Heuristic for Future Deforestation.
-    In a real scenario, this would call an ML model or use historical Open-Meteo weather trends 
-    (e.g., rising temperatures & dropping precipitation) to predict future risk.
-    """
-    import random
-    
-    # Base risk modifiers based on current state of affairs
-    base_multiplier = 1.0 + (hotspot_count * 0.05) + (current_area_lost * 0.01)
-    
-    # Simulate slightly random climate factors (temperature anomalies, drought indices)
-    temp_anomaly = random.uniform(0.5, 2.5) # °C rise simulated
-    drought_factor = random.uniform(1.0, 1.5)
-    
-    predicted_loss_2030 = round(current_area_lost * base_multiplier * drought_factor, 2)
-    predicted_loss_2040 = round(predicted_loss_2030 * random.uniform(1.2, 1.6), 2)
-    predicted_loss_2050 = round(predicted_loss_2040 * random.uniform(1.3, 1.8), 2)
-    
-    # Generate a risk level
-    if predicted_loss_2050 > 150 or temp_anomaly > 2.0:
-        future_risk = "CRITICAL"
-        warning = f"High drought factor and {temp_anomaly:.1f}°C temp anomaly predict severe habitat loss by 2050."
-    elif predicted_loss_2050 > 80:
-        future_risk = "SEVERE"
-        warning = "Accelerated deforestation expected due to climate trends extending into 2050."
-    elif predicted_loss_2050 > 40:
-        future_risk = "MODERATE"
-        warning = "Steady rate of deforestation expected through 2050."
-    else:
-        future_risk = "LOW"
-        warning = "Current trends indicate manageable forest loss through 2050, but monitoring required."
-        
-    return {
-        "predicted_area_loss_2030_sq_km": predicted_loss_2030,
-        "predicted_area_loss_2040_sq_km": predicted_loss_2040,
-        "predicted_area_loss_2050_sq_km": predicted_loss_2050,
-        "future_risk_level": future_risk,
-        "ai_warning": warning,
-        "climate_factors_considered": {
-            "simulated_temp_anomaly_C": round(temp_anomaly, 2),
-            "drought_intensity_factor": round(drought_factor, 2)
-        }
-    }
-
-@app.get("/deforestation-state-report")
-def get_deforestation_state_report():
-    """
-    Get a complete report of deforestation grouped by state, including future AI predictions.
-    """
-    db = Session()
-    events = db.query(DeforestationEvent).all()
-    db.close()
-    
-    # Group by state
-    state_data = {}
-    for e in events:
-        s = e.state or "Unknown"
-        if s not in state_data:
-            state_data[s] = {
-                "state": s,
-                "total_area_lost": 0.0,
-                "hotspot_count": 0,
-                "districts_affected": set(),
-                "events": []
-            }
-        
-        state_data[s]["total_area_lost"] += float(e.area_sq_km or 0) # type: ignore
-        state_data[s]["hotspot_count"] += 1
-        if e.district: # type: ignore
-            state_data[s]["districts_affected"].add(e.district)
-            
-        state_data[s]["events"].append({
-            "id": e.id,
-            "lat": e.lat,
-            "lon": e.lon,
-            "area": e.area_sq_km,
-            "risk": e.risk_level,
-            "district": e.district,
-            "ndvi_shift": e.ndvi_shift,
-            "cnn_confidence": e.cnn_confidence,
-            "t1_ndvi_url": getattr(e, "t1_ndvi_url", None),
-            "t2_ndvi_url": getattr(e, "t2_ndvi_url", None)
-        })
-        
-    # Format report and add predictions
-    report = []
-    for s, data in state_data.items():
-        data["total_area_lost"] = round(data["total_area_lost"], 2)
-        data["districts_count"] = len(data["districts_affected"])
-        data["districts_affected"] = list(data["districts_affected"])
-        
-        # Geerate AI Prediction
-        prediction = generate_deforestation_prediction(
-            s, 
-            data["total_area_lost"], 
-            data["hotspot_count"]
-        )
-        data["future_prediction"] = prediction
-        
-        report.append(data)
-        
-    # Sort by total area lost descending
-    report.sort(key=lambda x: x["total_area_lost"], reverse=True)
-    
-    return {
-        "total_states_affected": len(report),
-        "total_national_area_lost": round(sum(r["total_area_lost"] for r in report), 2),
-        "state_reports": report
-    }
 
 # ================= REQUEST SCHEMAS =================
 
@@ -1027,7 +725,7 @@ def cnn_predict(image_tensor):
         return False, 0.0
     with torch.no_grad():
         out = cnn(image_tensor)
-        probs = torch.softmax(out, dim=1)
+        probs = torch.nn.functional.softmax(out, dim=1)
         fire_prob = probs[0][1].item()
     return fire_prob >= FIRE_THRESHOLD, fire_prob
 
@@ -1240,54 +938,90 @@ def get_satellite_image_url(lat, lon, zoom=9):
     }
 
 def verify_fire_image_with_cnn(lat, lon):
-    """Download satellite image tile for coordinates and run ResNet18 fire CNN model"""
-    import io
+    """Download satellite image tile for coordinates and run ResNet18 fire CNN model.
+    Tries multiple tile providers with blank-tile detection.
+    Falls back to trust FIRMS satellite confidence if no image is available.
+    """
+    import io, math
+    from datetime import datetime, timedelta
+
     if not TORCH_AVAILABLE or cnn is None:
         return 0.88, True
 
     try:
-        urls = get_satellite_image_url(lat, lon, zoom=9)
-        img_url = urls.get("gibs")
-        r = None
-        if img_url:
+        yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+        zoom = 9
+        n = 2 ** zoom
+        tx = int((lon + 180) / 360 * n)
+        lat_rad = math.radians(lat)
+        ty = int((1 - math.log(math.tan(lat_rad) + 1 / math.cos(lat_rad)) / math.pi) / 2 * n)
+
+        # Build quadkey for Bing
+        def _quadkey(x, y, z):
+            qk = ""
+            for i in range(z, 0, -1):
+                d = 0
+                mask = 1 << (i - 1)
+                if (x & mask) != 0: d += 1
+                if (y & mask) != 0: d += 2
+                qk += str(d)
+            return qk
+
+        quadkey = _quadkey(tx, ty, zoom)
+
+        # Priority-ordered list of tile URLs to try
+        tile_urls = [
+            # GIBS VIIRS True Color (may 404 on very fresh dates)
+            f"https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_NOAA20_CorrectedReflectance_TrueColor/default/{yesterday}/GoogleMapsCompatible_Level9/{zoom}/{ty}/{tx}.jpg",
+            f"https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_CorrectedReflectance_TrueColor/default/{yesterday}/GoogleMapsCompatible_Level9/{zoom}/{ty}/{tx}.jpg",
+            # Bing Maps satellite
+            f"https://ecn.t0.tiles.virtualearth.net/tiles/a{quadkey}.jpeg?g=685&n=z",
+            f"https://ecn.t1.tiles.virtualearth.net/tiles/a{quadkey}.jpeg?g=685&n=z",
+            # ESRI World Imagery (public, no key)
+            f"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{zoom}/{ty}/{tx}",
+            # OpenStreetMap standard (vegetation context fallback)
+            f"https://tile.openstreetmap.org/{zoom}/{tx}/{ty}.png",
+        ]
+
+        img_content = None
+        used_url = None
+        for url in tile_urls:
             try:
-                r = requests.get(img_url, timeout=5, headers={"User-Agent": "FireMonitoringSystem/1.0"})
-            except Exception:
-                r = None
+                resp = requests.get(url, timeout=6, headers={"User-Agent": "SatSen-FireMonitor/2.0"})
+                if resp.status_code == 200 and len(resp.content) > 5000:  # >5KB = real image
+                    img_content = resp.content
+                    used_url = url
+                    break
+                else:
+                    print(f"  Tile skip: {url[:60]}... -> HTTP {resp.status_code} size={len(resp.content)}b")
+            except Exception as te:
+                print(f"  Tile error: {url[:60]}... -> {te}")
+                continue
 
-        if not r or r.status_code != 200:
-            img_url = urls.get("bing")
-            if img_url:
-                try:
-                    r = requests.get(img_url, timeout=5, headers={"User-Agent": "FireMonitoringSystem/1.0"})
-                except Exception:
-                    r = None
-
-        if not r or r.status_code != 200:
-            print(f"⚠️ Satellite tile server unreachable for ({lat}, {lon})")
+        if img_content is None:
+            # No tile available – trust FIRMS satellite confidence directly
+            print(f"No valid satellite tile for ({lat:.4f},{lon:.4f}) — trusting FIRMS confidence")
             return 0.85, True
 
-        img = Image.open(io.BytesIO(r.content)).convert("RGB")
-        
-        transform = transforms.Compose([
+        img = Image.open(io.BytesIO(img_content)).convert("RGB")
+        tf = transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
             transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
         ])
-        
-        input_tensor = transform(img).unsqueeze(0)
-        
+
+        input_tensor = tf(img).unsqueeze(0)
         with torch.no_grad():
             outputs = cnn(input_tensor)
-            probs = torch.softmax(outputs, dim=1)
+            probs = torch.nn.functional.softmax(outputs, dim=1)
             fire_prob = float(probs[0][1].item())
-            
+
         verified = fire_prob >= FIRE_THRESHOLD
-        print(f"🔥 CNN verified fire at ({lat}, {lon}) with confidence {fire_prob:.3f}. Verified={verified}")
+        print(f"CNN: ({lat:.4f},{lon:.4f}) fire_prob={fire_prob:.3f} verified={verified} src={used_url[:40]}...")
         return round(fire_prob, 3), verified
-        
+
     except Exception as e:
-        print(f"⚠️ CNN image verification error at ({lat}, {lon}): {e}")
+        print(f"CNN image verification error at ({lat},{lon}): {e}")
         return 0.83, True
 
 @app.get("/test/firms")
@@ -1306,7 +1040,7 @@ def manual_predict_fire(image: Image.Image):
     tensor = transform(image).unsqueeze(0) # type: ignore
     with torch.no_grad():
         out = cnn(tensor)
-        probs = torch.softmax(out, dim=1)
+        probs = torch.nn.functional.softmax(out, dim=1)
         fire_prob = probs[0][1].item()
     return fire_prob >= FIRE_THRESHOLD, "wildfire" if fire_prob >= FIRE_THRESHOLD else "non-fire", fire_prob
 
@@ -1360,18 +1094,121 @@ def fire_growth_timeline(lat, lon, severity, wind_speed, wind_direction):
     return timeline
 
 # ================= FIRE PIPELINE =================
-def fire_pipeline(limit=50):
+
+# Major population centres used to boost fire priority near cities
+_POPULATION_CENTERS = [
+    # (lat, lon, name)
+    (47.66,  -117.43, "Spokane, WA"),
+    (45.52,  -122.68, "Portland, OR"),
+    (47.61,  -122.33, "Seattle, WA"),
+    (43.61,  -116.20, "Boise, ID"),
+    (48.85,    2.35,  "Paris, FR"),
+    (40.42,   -3.70,  "Madrid, ES"),
+    (37.98,   23.73,  "Athens, GR"),
+    (38.72,   -9.14,  "Lisbon, PT"),
+    (45.46,    9.19,  "Milan, IT"),
+    (55.75,   37.62,  "Moscow, RU"),
+    (59.93,   30.32,  "St.Petersburg, RU"),
+    (51.51,   -0.13,  "London, UK"),
+    (52.52,   13.41,  "Berlin, DE"),
+    (34.05, -118.24,  "Los Angeles, CA"),
+    (37.77, -122.42,  "San Francisco, CA"),
+    (39.95,  -75.17,  "Philadelphia, PA"),
+    (33.75,  -84.39,  "Atlanta, GA"),
+    (25.20,   55.27,  "Dubai, UAE"),
+    (28.61,   77.21,  "New Delhi, IN"),
+    (19.08,   72.88,  "Mumbai, IN"),
+    (-33.87,  151.21, "Sydney, AU"),
+    (35.69,  139.69,  "Tokyo, JP"),
+    (31.23,  121.47,  "Shanghai, CN"),
+    (-23.55,  -46.63, "São Paulo, BR"),
+    (-34.61,  -58.38, "Buenos Aires, AR"),
+]
+
+def _proximity_boost(lat, lon):
+    """Return a multiplier 1.0–2.5 based on how close this fire is to a major city.
+    Fires within 200 km of a population centre get boosted priority."""
+    import math
+    R = 6371  # km
+    best = 0.0
+    for clat, clon, _ in _POPULATION_CENTERS:
+        dlat = math.radians(lat - clat)
+        dlon = math.radians(lon - clon)
+        a = math.sin(dlat/2)**2 + math.cos(math.radians(lat)) * math.cos(math.radians(clat)) * math.sin(dlon/2)**2
+        d = 2 * R * math.asin(math.sqrt(a))
+        if d < 50:   boost = 2.5
+        elif d < 100: boost = 2.0
+        elif d < 200: boost = 1.5
+        elif d < 500: boost = 1.2
+        else:         boost = 1.0
+        best = max(best, boost)
+    return best
+
+def _grid_cell(lat, lon, grid=5):
+    """Return a (row, col) grid key for geographic clustering at `grid`-degree resolution."""
+    return (int(lat // grid), int(lon // grid))
+
+def _smart_select(fires, limit=100):
+    """Select up to `limit` fire events using geographic diversity + population proximity.
+
+    Algorithm:
+      1. Compute a composite score for every event.
+      2. Cluster events into 5°×5° grid cells.
+      3. Cap each grid cell at `per_cell_cap` events to prevent one region dominating.
+      4. Sort final selection by composite score descending.
+    """
+    import math
+
+    per_cell_cap = max(3, limit // 10)  # at most 10% of quota from any single 5°×5° cell
+
+    scored = []
+    for f in fires:
+        try:
+            lat  = float(f.get("latitude") or f.get("lat", 0))
+            lon  = float(f.get("longitude") or f.get("lon", 0))
+            frp  = float(f.get("frp") or f.get("brightness", 0))
+            conf = int(f.get("confidence") or 50)
+            if lat == 0 and lon == 0:
+                continue
+            conf_w = conf / 100.0            # 0.0–1.0
+            frp_n  = min(frp / 200.0, 3.0)  # normalize; cap at 3× so 600 MW != infinite
+            pop    = _proximity_boost(lat, lon)
+            score  = frp_n * conf_w * pop
+            scored.append((score, _grid_cell(lat, lon), f))
+        except Exception:
+            continue
+
+    # Sort globally by score descending
+    scored.sort(key=lambda x: x[0], reverse=True)
+
+    # Apply per-cell cap to ensure geographic diversity
+    cell_counts = {}
+    selected = []
+    for score, cell, f in scored:
+        if len(selected) >= limit:
+            break
+        count = cell_counts.get(cell, 0)
+        if count < per_cell_cap:
+            selected.append(f)
+            cell_counts[cell] = count + 1
+
+    print(f"Smart selector: {len(fires)} raw -> {len(selected)} diverse events "
+          f"(cap={per_cell_cap}/cell, {len(cell_counts)} regions represented)")
+    return selected
+
+
+def fire_pipeline(limit=100):
     """Fetch and process fire events from satellite data"""
     db=Session()
     try:
-        fires = fetch_firms("world", days=5)
+        fires = fetch_firms("world", days=1)  # days=1 prevents DB dedup from swallowing all events
         print(f"Fetched {len(fires)} fire events from satellite")
         
-        # Sort by FRP (severity) descending so major fires are prioritized first
-        fires.sort(key=lambda x: float(x.get("frp") or x.get("brightness", 0)), reverse=True)
+        # Apply smart geographic-diversity selector
+        selected = _smart_select(fires, limit=limit)
         
         processed = 0
-        for f in fires[:limit]:
+        for f in selected:
             try:
                 # Handle different API response formats
                 lat = float(f.get("latitude") or f.get("lat", 0))
@@ -1388,17 +1225,37 @@ def fire_pipeline(limit=50):
                 sev = severity_from_firms(frp, conf)
                 if not sev: 
                     continue
-                # ================= NASA GIBS Satellite Image CNN Verification =================
-                fire_prob, fire_confirmed = verify_fire_image_with_cnn(lat, lon)
-                
-                # Skip only if CNN has low confidence AND the FIRMS satellite confidence is also low/unreliable (< 70)
-                if not fire_confirmed and fire_prob < 0.30 and conf < 70:
-                    print(f"⚠️ Skipping event at ({lat}, {lon}) due to low CNN confidence ({fire_prob}) and low satellite confidence ({conf})")
-                    continue
+                # ===== CNN VISUAL VERIFICATION =====
+                # FIRMS uses thermal infrared (TIR) satellite sensors — fires detected with
+                # FRP > 100 MW and confidence >= 70 are virtually always real fires.
+                # Visual satellite tiles (GIBS/Bing true-color) show forest/terrain at zoom=9
+                # and are NOT reliable for confirming fire at this resolution.
+                # Strategy: Trust FIRMS directly for high-confidence events.
+                #            Use CNN as a secondary veto ONLY for low-confidence events.
+                if frp >= 100 and conf >= 70:
+                    # HIGH-confidence FIRMS thermal detection — bypass CNN, trust satellite
+                    fire_prob = 0.95
+                    fire_confirmed = True
+                    print(f"FIRMS HIGH-CONF: ({lat:.4f},{lon:.4f}) FRP={frp} conf={conf} — trusted directly")
+                elif frp >= 50 and conf >= 60:
+                    # MEDIUM-high — still reliable enough to trust
+                    fire_prob = 0.88
+                    fire_confirmed = True
+                    print(f"FIRMS MED-CONF: ({lat:.4f},{lon:.4f}) FRP={frp} conf={conf} — trusted directly")
+                else:
+                    # LOW confidence — run CNN visual check as a veto
+                    fire_prob, fire_confirmed = verify_fire_image_with_cnn(lat, lon)
+                    if not fire_confirmed and fire_prob < 0.30 and conf < 60:
+                        print(f"SKIP: ({lat:.4f},{lon:.4f}) CNN={fire_prob:.3f} FIRMS_conf={conf} — both low")
+                        continue
                 # Check if event already exists (avoid duplicates)
+                # Use acquisition date+time so re-fires at the same location today are NOT skipped
+                acq_date = f.get("acq_date", "")
+                acq_time = f.get("acq_time", "")
                 existing = db.query(FireEvent).filter(
                     FireEvent.lat.between(lat-0.01, lat+0.01),
-                    FireEvent.lon.between(lon-0.01, lon+0.01)
+                    FireEvent.lon.between(lon-0.01, lon+0.01),
+                    FireEvent.timestamp >= datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
                 ).first()
                 
                 if existing:
@@ -1487,7 +1344,7 @@ def scheduler():
     """Background task to fetch fire events every 15 minutes"""
     while True:
         try:
-            fire_pipeline(limit=500)
+            fire_pipeline(limit=10)
         except Exception as e:
             print(f"Scheduler error: {e}")
         time.sleep(900)  # 15 minutes
@@ -1774,10 +1631,10 @@ def fire_events(sandbox: bool = False):
         result = []
         for event in events:
             # Calculate evacuation direction (opposite to fire spread)
-            evac_direction = get_evacuation_direction(event.spread_direction) if event.spread_direction else "Away from fire" # type: ignore
+            evac_direction = get_evacuation_direction(event.spread_direction) if event.spread_direction is not None else "Away from fire"
             
             # Get satellite images
-            images = get_satellite_image_url(event.lat, event.lon) if event.lat and event.lon else {} # type: ignore
+            images = get_satellite_image_url(event.lat, event.lon) if (event.lat is not None and event.lon is not None) else {}
             
             # Calculate safety zones
             safety_zones = calculate_safety_zones(event.lat, event.lon, event.spread_direction)
@@ -1792,7 +1649,7 @@ def fire_events(sandbox: bool = False):
                 "evacuation_direction": evac_direction,
                 "district": getattr(event, 'district', None),
                 "state": getattr(event, 'state', None),
-                "timestamp": event.timestamp.isoformat() if event.timestamp else None, # type: ignore
+                "timestamp": event.timestamp.isoformat() if event.timestamp is not None else None,
                 "satellite_images": images,
                 "safety_zones": safety_zones,
                 "fire_polygon": fire_polygon(event.lat, event.lon, event.severity or "MEDIUM", 10, 90),
@@ -1876,11 +1733,11 @@ def update_locations():
         
         updated = 0
         for event in events:
-            if event.lat and event.lon: # type: ignore
+            if event.lat is not None and event.lon is not None:
                 d, s = reverse_geocode(event.lat, event.lon)
                 if d != "Unknown" or s != "Unknown":
-                    event.district = d # type: ignore
-                    event.state = s # type: ignore
+                    setattr(event, 'district', d)
+                    setattr(event, 'state', s)
                     updated += 1
                 time.sleep(1.5)  # Rate limiting
         
@@ -1943,13 +1800,19 @@ def calculate_fire_risk(fire_prob, spread_risk):
     elif score > 0.2:
         return "MODERATE"
     return "LOW"
-import pyttsx3
-
-voice_engine = pyttsx3.init()
-voice_engine.setProperty("rate", 160)
-voice_engine.setProperty("volume", 1.0)
+voice_engine = None
+try:
+    import pyttsx3
+    voice_engine = pyttsx3.init()
+    voice_engine.setProperty("rate", 160)
+    voice_engine.setProperty("volume", 1.0)
+except Exception as e:
+    print("Warning: Local voice engine (pyttsx3) initialization failed. Audio alerts will print to stdout.", e)
 
 def speak_alert(message):
+    if voice_engine is None:
+        print("ALERT (Audio disabled):", message)
+        return
     try:
         voice_engine.say(message)
         voice_engine.runAndWait()
@@ -2213,6 +2076,9 @@ class EmergencyLog(Base):
     severity = Column(String(50))
     message = Column(String(500))
     created_at = Column(DateTime, default=datetime.utcnow)
+
+Base.metadata.create_all(engine)
+
 @app.get("/emergency/history")
 def get_emergency_history():
     db = Session()
@@ -2373,39 +2239,93 @@ import requests
 def disaster_chat(data: dict):
     try:
         raw_msg = data.get("message", "")
-        user_message = (raw_msg or "").lower()
+        user_message = (raw_msg or "")
         events = data.get("events", [])
-        
-        # Build a concise summary for the LLM
+        user_lat = data.get("user_lat")
+        user_lon = data.get("user_lon")
+
+        db = Session()
+        try:
+            # If events weren't passed, fetch from DB
+            if not events:
+                db_events = db.query(FireEvent).order_by(FireEvent.timestamp.desc()).limit(20).all()
+                events = []
+                for e in db_events:
+                    events.append({
+                        "id": e.id,
+                        "lat": e.lat,
+                        "lon": e.lon,
+                        "severity": e.severity,
+                        "spread_risk": getattr(e, 'spread_risk', None),
+                        "spread_direction": getattr(e, 'spread_direction', None),
+                        "district": getattr(e, 'district', None),
+                        "state": getattr(e, 'state', None)
+                    })
+        finally:
+            db.close()
+
+        # Perform distance analysis to build high-quality real-time analysis context
+        closest_fire = None
+        closest_distance = float('inf')
+        user_in_danger = False
+
+        for e in events:
+            lat = e.get("lat")
+            lon = e.get("lon")
+            if lat is not None and lon is not None and user_lat is not None and user_lon is not None:
+                dist = haversine_distance(float(user_lat), float(user_lon), float(lat), float(lon))
+                if dist < closest_distance:
+                    closest_distance = dist
+                    closest_fire = e
+                    if dist <= 25.0:
+                        user_in_danger = True
+
         fire_summary = ""
-        if events and len(events) > 0:
+        if events:
             for idx, e in enumerate(events[:5]):
                 loc = e.get("district", "Unknown")
                 state = e.get("state", "Unknown")
                 sev = e.get("severity", "UNKNOWN")
                 spread = e.get("spread_direction", "unknown direction")
-                evac_dir = e.get("evacuation_direction", "a safe area")
-                safe_zones_list = e.get("safety_zones") or []
-                safe_zones = ", ".join([z.get("name", "") for z in safe_zones_list][:2])
-                fire_summary += f"- Level {sev} fire in {loc}, {state}. Spreading {spread}. Evacuate towards {evac_dir}. Safe zones: {safe_zones}.\n"
+                evac_dir = get_evacuation_direction(spread) if spread else "a safe area"
+                fire_summary += f"- Fire {idx+1}: {sev} severity in {loc}, {state} (Coordinates: {e.get('lat')}, {e.get('lon')}). Spreading {spread}. Escape to {evac_dir}.\n"
         else:
-            fire_summary = "There are currently no active forest fires detected by the system."
+            fire_summary = "No active forest fires detected."
+
+        analysis_context = ""
+        if user_lat is not None and user_lon is not None:
+            analysis_context += f"User Current Location: Latitude {user_lat}, Longitude {user_lon}\n"
+            if closest_fire:
+                loc = closest_fire.get("district", "Unknown")
+                state = closest_fire.get("state", "Unknown")
+                spread = closest_fire.get("spread_direction", "unknown")
+                evac_dir = get_evacuation_direction(spread) if spread else "Away from fire"
+                analysis_context += (
+                    f"Closest active fire to user is located in {loc}, {state} at a distance of {closest_distance:.2f} km. "
+                    f"Fire spread direction is {spread}. Evacuation escape direction: {evac_dir}.\n"
+                )
+                if user_in_danger:
+                    analysis_context += "WARNING: User is within the DANGER ZONE (<= 25 km from the active fire). IMMEDIATE evacuation is recommended.\n"
+                else:
+                    analysis_context += "User is currently at a safe distance (> 25 km) from this active fire.\n"
+        else:
+            analysis_context += "User location coordinates not supplied.\n"
 
         system_prompt = f"""
-You are an AI Safety & Disaster Awareness Assistant. You speak like a very knowledgeable, helpful friend to the user. Always address the user warmly as "Boss".
+You are the SATSEN Command Center AI, a highly advanced satellite-linked disaster mitigation and safety assistant. Always address the user warmly as "Boss".
 
-CRITICAL INSTRUCTION:
-1. First and foremost, ANSWER THE USER'S SPECIFIC QUESTION directly. Do not simply list all active fires unless the user explicitly asks for a general update or "what is the status".
-2. If the user asks a general question (e.g., "what are the important measures to escape"), answer THAT question. Do NOT list the current fire incidents unless they ask for them.
-3. If the user asks about a specific location, only mention fires relevant to that location.
-4. If they just say "hello", greet them back warmly and ask how you can help. Do not dump fire statistics on them.
+CRITICAL RULES:
+1. STRICT TOPIC FILTERING: If the user asks a question that is NOT related to disasters, wildfires, forest fires, safety, evacuation, escape routes, deforestation, climate anomalies, weather hazards, or satellite/GIS monitoring, you MUST politely but firmly refuse to answer. Explain that you are dedicated solely to disaster mitigation and emergency escape guidance.
+2. REAL-TIME DATA ANALYSIS: Analyze the provided fire events and user location to offer custom, correct escape directions and safety advice. Reference distances, locations, and directions clearly.
+3. SPEECH-FRIENDLY OUTPUT: Keep your response concise, clear, and easy to read aloud by a text-to-speech engine. Do NOT use markdown symbols (no asterisks, hash signs, bullet points, or complex bolding). Just write clean spoken text.
 
-Analyze the user's sentiment. If they express fear, panic, or anxiety, begin your response with a very calming, comforting, and empathetic tone before providing any information or safety instructions.
-Keep your response concise, actionable, and suitable for an audio text-to-speech engine (do not use markdown formatting like asterisks or hashes, just plain spoken text).
-
-Real-Time Fire Events Data (ONLY reference this if the user asks about active fires, locations, or their status):
+Real-Time Telemetry Data:
 {fire_summary}
+
+User Proximity Analysis:
+{analysis_context}
 """
+
         full_prompt = f"{system_prompt}\nUser Question: {user_message}"
 
         # Try hitting Gemini
@@ -2419,39 +2339,43 @@ Real-Time Fire Events Data (ONLY reference this if the user asks about active fi
             reply = response.text
             return {"reply": reply.strip()}
         except Exception as api_e:
-            import traceback
-            traceback.print_exc()
-            print("Gemini API is unreachable or returned an error:", api_e)
+            print("Gemini API error, using intelligent local engine:", api_e)
             
-            # Fallback to the hardcoded logic if Ollama fails
-            if not events or len(events) == 0:
-                return {"reply": "Hello Boss. There are currently no active forest fires detected by the orbital monitoring system. The national overview is secure."}
-
-            wants_escape = "escape" in user_message or "route" in user_message or "evacuate" in user_message or "safe" in user_message
-            emergency_broadcast = "Hello Boss. Warning. "
+            # Local fallback matching the rules
+            query_lower = user_message.lower()
             
-            for idx, e in enumerate(events[:3]):
-                loc = e.get("district", "Unknown District")
-                state = e.get("state", "Unknown State")
-                sev = e.get("severity", "UNKNOWN")
-                
-                emergency_broadcast += f"Active level {sev} fire detected in {loc}, {state}. "
-                
-                spread_dir = e.get("spread_direction", "")
-                if spread_dir:
-                    emergency_broadcast += f"The fire is actively spreading towards the {spread_dir}. "
-                    
-                if wants_escape:
-                    evac_dir = e.get("evacuation_direction", "")
-                    if evac_dir:
-                        emergency_broadcast += f"Immediate evacuation is required. Proceed immediately towards the {evac_dir}. "
-                    
-                    safe_zones_list = e.get("safety_zones") or []
-                    if safe_zones_list and len(safe_zones_list) > 0:
-                        emergency_broadcast += f"The nearest verified safe zone is {safe_zones_list[0].get('name', 'a nearby relief center')}. "
+            # Check if query is disaster/safety related
+            keywords = ["fire", "disaster", "escape", "route", "evacuate", "safety", "hotspot", "satellite", "telemetry", "deforestation", "danger", "wind", "weather", "status", "help", "hello", "hi"]
+            is_related = any(kw in query_lower for kw in keywords)
+            if not is_related:
+                return {"reply": "I apologize, Boss, but my systems are restricted. I can only assist you with disaster monitoring, escape routes, safety instructions, and real-time fire analysis. Please ask a disaster-related question."}
 
-            emergency_broadcast += "Please stay safe, Boss, and follow local instructions."
-            return {"reply": emergency_broadcast}
+            if "hello" in query_lower or "hi" in query_lower:
+                return {"reply": "Hello Boss! I am monitoring the satellite telemetry streams. Let me know if you need help with active fires, danger alerts, or evacuation escape routes."}
+
+            reply = "Boss, here is the telemetry analysis. "
+            if user_lat is not None and user_lon is not None and closest_fire:
+                loc = closest_fire.get("district", "Unknown")
+                state = closest_fire.get("state", "Unknown")
+                spread = closest_fire.get("spread_direction", "unknown")
+                evac_dir = get_evacuation_direction(spread) if spread else "a safe area"
+                reply += f"The closest active fire is in {loc}, {state}, which is {closest_distance:.1f} kilometers from your position. "
+                if user_in_danger:
+                    reply += f"This is within the active danger zone! The fire is spreading towards the {spread}. You must evacuate immediately towards the {evac_dir} and move at least 10 kilometers away."
+                else:
+                    reply += f"You are currently {closest_distance:.1f} kilometers away, which is outside the immediate danger zone. Continue to monitor the situation. If you need to evacuate, the safest direction is {evac_dir}."
+            else:
+                if events:
+                    e = events[0]
+                    loc = e.get("district", "Unknown")
+                    state = e.get("state", "Unknown")
+                    spread = e.get("spread_direction", "unknown")
+                    evac_dir = get_evacuation_direction(spread) if spread else "a safe area"
+                    reply += f"Currently monitoring {len(events)} active hotspots. The most recent event is a fire in {loc}, {state}, spreading towards the {spread}. Recommended evacuation is towards the {evac_dir}."
+                else:
+                    reply += "There are currently no active forest fires detected by the satellite monitoring systems. The overview is secure."
+            
+            return {"reply": reply}
 
     except Exception as e:
         import traceback
